@@ -1,0 +1,11 @@
+{
+    "name": "user/otusgabrielyan.loc",
+    "autoload": {
+        "psr-4": {
+            "User\\OtusgabrielyanLoc\\": "src/"
+        }
+    },
+    "require": {
+        "symfony/var-dumper": "^6.4"
+    }
+}
