@@ -6,6 +6,8 @@
         }
     },
     "require": {
-        "symfony/var-dumper": "^6.4"
+        "symfony/var-dumper": "^7.4",
+        "php-sage/sage": "^1.7",
+        "leeoniya/dump-r": "^2.1"
     }
 }
