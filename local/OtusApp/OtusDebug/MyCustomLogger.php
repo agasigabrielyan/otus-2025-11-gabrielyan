@@ -17,6 +17,7 @@ class MyCustomLogger extends FileExceptionHandlerLog {
     {
         $logsDir = $_SERVER['DOCUMENT_ROOT'] . '/local/logs/';
 
+        // Создаём папку, если не существует
         if (!is_dir($logsDir)) {
             mkdir($logsDir, 0755, true);
         }

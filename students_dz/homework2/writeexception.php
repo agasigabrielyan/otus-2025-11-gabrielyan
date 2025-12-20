@@ -1,4 +1,7 @@
-<? require($_SERVER["DOCUMENT_ROOT"] . "/bitrix/header.php");
+<?php require($_SERVER["DOCUMENT_ROOT"] . "/bitrix/header.php");
+/**
+ * @var $APPLICATION
+ */
 $APPLICATION->SetTitle("Ошибка для exeption");
 ?>
 <ul class="list-group">
@@ -6,9 +9,7 @@ $APPLICATION->SetTitle("Ошибка для exeption");
         <a href="/local/logs/exceptions.log">Файл лога</a>
     </li>
 </ul>
-<?
-// ошибка для exeption
-
+<?php
+    $result = 5 / 0;
 ?>
-
-<? require($_SERVER["DOCUMENT_ROOT"] . "/bitrix/footer.php"); ?>
+<?php require($_SERVER["DOCUMENT_ROOT"] . "/bitrix/footer.php"); ?>

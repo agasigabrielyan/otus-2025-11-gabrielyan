@@ -33,18 +33,18 @@ Asset::getInstance()->addCss('//cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bo
 <h4 class="mb-3 mt-5">Часть 2 - Exception</h4>
 <ul class="list-group">
     <li class="list-group-item">
-        <a href="/local/logs/exceptions.log">Файл лога из п2 ДЗ</a>
+        <a target="_blank" href="/local/logs/exceptions.log">Файл лога из п2 ДЗ</a>
     </li>
     <li class="list-group-item">
-        <a href="writeexception.php">Добавление в лог из п2 ДЗ</a>
+        <a target="_blank" href="writeexception.php">Добавление в лог из п2 ДЗ</a>
     </li>
     <li class="list-group-item">
-        <a href="clearexception.php">Очистить лог из п2 ДЗ</a>
+        <a target="_blank" href="clearexception.php">Очистить лог из п2 ДЗ</a>
     </li>
     <li class="list-group-item">
-        <a href="/bitrix/admin/fileman_file_edit.php?path=%2Flocal%2Fphp_interface%2Fsrc%2FOtus%2FDiag%2FFileExceptionHanlderLogCustom.php&full_src=Y">Файл с классом системного исключений</a>
+        <a target="_blank" href="/bitrix/admin/fileman_file_edit.php?path=%2Flocal%2FOtusApp%2FOtusException%2FMyCustomFileExceptionHandler.php&full_src=Y&site=s1&lang=ru&&filter=Y&set_filter=Y">Файл с классом системного исключений</a>
     </li>
 </ul>
 
 
-<? require($_SERVER["DOCUMENT_ROOT"] . "/bitrix/footer.php"); ?>
+<?php require($_SERVER["DOCUMENT_ROOT"] . "/bitrix/footer.php"); ?>
