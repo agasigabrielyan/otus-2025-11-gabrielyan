@@ -7,6 +7,12 @@ use Bitrix\Main\Diag\FileExceptionHandlerLog;
 class MyCustomFileExceptionHandler extends FileExceptionHandlerLog
 {
     protected $level;
+
+    /**
+     * @param $exception
+     * @param $logType
+     * @return void
+     */
     public function write($exception, $logType): void
     {
         // Проверяем, есть ли папка /local/logs, и создаем если нет
