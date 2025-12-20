@@ -1,28 +1,31 @@
-<? use Bitrix\Main\Page\Asset;
+<?php use Bitrix\Main\Page\Asset;
 
 require($_SERVER["DOCUMENT_ROOT"] . "/bitrix/header.php"); ?>
 <?php
+/**
+ * @var $APPLICATION
+ */
 $APPLICATION->SetTitle("ДЗ #2: Отладка и логирование");
 
 Asset::getInstance()->addCss('//cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css');
 
 
 ?>
-<h1 class="mb-3"><? $APPLICATION->ShowTitle() ?></h1>
+<h1 class="mb-3"><?php $APPLICATION->ShowTitle() ?></h1>
 
 <h4 class="mb-3">Часть 1 - Logger</h4>
 <ul class="list-group">
     <li class="list-group-item">
-        <a href="/local/logs/log_custom.log">Файл лога из п1 ДЗ</a>
+        <a target="_blank" href="/local/logs/log_custom.log">Файл лога из п1 ДЗ</a>
     </li>
     <li class="list-group-item">
-        <a href="writelog.php">Добавление в лог из п1 ДЗ</a>
+        <a target="_blank" href="writelog.php">Добавление в лог из п1 ДЗ</a>
     </li>
     <li class="list-group-item">
-        <a href="clearlog.php">Очистить лог из п1 ДЗ</a>
+        <a target="_blank" href="clearlog.php">Очистить лог из п1 ДЗ</a>
     </li>
     <li class="list-group-item">
-        <a href="/bitrix/admin/fileman_file_edit.php?path=%2Flocal%2FApp%2FDebug%2FLog.php&full_src=Y">Файл с классом кастомного логгера</a>
+        <a target="_blank" href="/bitrix/admin/fileman_file_edit.php?path=%2Flocal%2FOtusApp%2FOtusDebug%2FMyCustomLogger.php&full_src=Y&site=s1&lang=ru&&filter=Y&set_filter=Y">Файл с классом кастомного логгера</a>
     </li>
 </ul>
 

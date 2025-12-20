@@ -2,7 +2,7 @@
     "name": "user/otusgabrielyan.loc",
     "autoload": {
         "psr-4": {
-            "User\\OtusgabrielyanLoc\\": "src/"
+            "OtusApp\\": "local/OtusApp/"
         }
     },
     "require": {
