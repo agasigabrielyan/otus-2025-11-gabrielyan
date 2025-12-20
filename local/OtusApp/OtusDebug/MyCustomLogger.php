@@ -15,20 +15,25 @@ class MyCustomLogger extends FileExceptionHandlerLog {
      */
     public static function logOfMine($message, $clear = false, $fileName = 'log_custom', $timeVersion = true): void
     {
-        $logFile = $_SERVER['DOCUMENT_ROOT'] . '/local/logs/' . $fileName;
-        if($timeVersion) {
+        $logsDir = $_SERVER['DOCUMENT_ROOT'] . '/local/logs/';
+
+        if (!is_dir($logsDir)) {
+            mkdir($logsDir, 0755, true);
+        }
+
+        $logFile = $logsDir . $fileName;
+        if ($timeVersion) {
             $logFile .= '_' . date('d.m.Y');
         }
         $logFile .= '.log';
 
-        $_message = date("d.m.Y H:i:s");
-        $_message .= "\n";
-        $_message .= print_r($message, true);
-        $_message .= "\n";
-        $_message .= "___";
-        $_message .= "\n";
+        // Формируем сообщение
+        $_message = date("d.m.Y H:i:s") . "\n";
+        $_message .= print_r($message, true) . "\n";
+        $_message .= "___\n";
 
-        if($clear) {
+        // Записываем
+        if ($clear) {
             file_put_contents($logFile, "");
         } else {
             file_put_contents($logFile, $_message, FILE_APPEND);
