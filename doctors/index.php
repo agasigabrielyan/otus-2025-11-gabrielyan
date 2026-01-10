@@ -4,7 +4,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . "/bitrix/header.php";
  * @var $APPLICATION
  */
 
-$APPLICATION->SetTitle("Приемный покой");
+$APPLICATION->SetTitle("Доктора (Приемный покой)");
 
 use OtusApp\OtusDoctors\MyOtusDoctorsIblockCreation;
 use OtusApp\OtusModels\Lists\DoctorsPropertyValuesTable as DoctorsTable;
