@@ -1,180 +1,153 @@
-<?php require_once $_SERVER['DOCUMENT_ROOT'] . "/bitrix/header.php";
-/**
- * @var $APPLICATION
- */
-$APPLICATION->SetTitle("Доктора");
+<?php
+require_once $_SERVER['DOCUMENT_ROOT'] . "/bitrix/header.php";
 
-use Bitrix\Main\Loader;
-use Bitrix\Iblock\IblockTable;
-use Bitrix\Iblock\PropertyTable;
+$APPLICATION->SetTitle("Приемный покой");
 
-Loader::includeModule("iblock");
+use OtusApp\OtusDoctors\MyOtusDoctorsIblockCreation;
+use OtusApp\OtusModels\Lists\DoctorsPropertyValuesTable as DoctorsTable;
+use Bitrix\Iblock\ElementTable;
 
-define('IBLOCK_TYPE','structure');
-define('IBLOCK_PROCEDURES_CODE','procedures');
-define('IBLOCK_DOCTORS_CODE','doctors');
+\Bitrix\Main\Page\Asset::getInstance()->addCss("/doctors/otus-doctors.css");
 
-/**
- * Создает инфоблок, если не существует
- */
-function getOrCreateIblock($name, $code)
-{
-    $iblock = IblockTable::getList([
-        'filter' => ['=CODE' => $code],
-        'select' => ['ID']
-    ])->fetch();
+$doctorsIblockId = MyOtusDoctorsIblockCreation::migrateAndFillDemoData();
+$doctorId = isset($_GET['DOCTOR_ID']) ? (int)$_GET['DOCTOR_ID'] : 0;
 
-    if ($iblock) return (int)$iblock['ID'];
+$proceduresIblock = \CIBlock::GetList([], ['CODE' => 'procedures'])->Fetch();
+$proceduresIblockId = (int)$proceduresIblock['ID'];
 
-    $ib = new CIBlock();
-    $id = $ib->Add([
-        'NAME' => $name,
-        'CODE' => $code,
-        'IBLOCK_TYPE_ID' => IBLOCK_TYPE,
-        'SITE_ID' => ['s1'],
-        'ACTIVE' => 'Y',
-        'VERSION' => 2
-    ]);
+if ($doctorId > 0) {
 
-    if (!$id) throw new \RuntimeException($ib->LAST_ERROR);
-    return (int)$id;
-}
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['procedures'])) {
+        $procedureIds = array_map('intval', $_POST['procedures']);
+        \CIBlockElement::SetPropertyValuesEx($doctorId, $doctorsIblockId, ['PROCEDURES' => $procedureIds]);
+        LocalRedirect("/doctors/?DOCTOR_ID={$doctorId}");
+    }
 
-/**
- * Создает свойство инфоблока, если его нет
- */
-function createPropertyIfNotExists(array $fields)
-{
-    $exists = PropertyTable::getList([
+    $doctor = DoctorsTable::getList([
+        'select' => [
+            'DOCTOR_ID' => 'ELEMENT.ID',
+            'DOCTOR_NAME' => 'ELEMENT.NAME',
+            'CABINET',
+            'PROCEDURES'
+        ],
         'filter' => [
-            '=CODE' => $fields['CODE'],
-            '=IBLOCK_ID' => $fields['IBLOCK_ID'],
+            'ELEMENT.ID' => $doctorId
         ]
     ])->fetch();
 
-    if ($exists) return;
+    $allProcedures = ElementTable::getList([
+        'filter' => ['IBLOCK_ID' => $proceduresIblockId],
+        'select' => ['ID', 'NAME']
+    ])->fetchAll();
 
-    $property = new CIBlockProperty();
-    $property->Add($fields);
-}
-
-/**
- * Заполняет демо данными, если их нет
- */
-function fillDemoData($iblockId, array $elements)
-{
-    $exists = CIBlockElement::GetList([], ['IBLOCK_ID' => $iblockId], false, ['nTopCount' => 1])->Fetch();
-    if ($exists) return;
-
-    $el = new CIBlockElement();
-    foreach ($elements as $element) {
-        $result = $el->Add([
-            'IBLOCK_ID' => $iblockId,
-            'NAME' => $element['NAME'],
-            'ACTIVE' => 'Y',
-            'PROPERTY_VALUES' => $element['PROPS'] ?? []
-        ]);
-        if (!$result) throw new \RuntimeException($el->LAST_ERROR);
+    $proceduresMap = [];
+    foreach ($allProcedures as $proc) {
+        $proceduresMap[$proc['ID']] = $proc['NAME'];
     }
-}
 
-// --- Создаем инфоблоки ---
-$proceduresIblockId = getOrCreateIblock('Процедуры', IBLOCK_PROCEDURES_CODE);
-$doctorsIblockId = getOrCreateIblock('Доктора', IBLOCK_DOCTORS_CODE);
-
-// --- Свойства инфоблока Доктора ---
-createPropertyIfNotExists([
-    'IBLOCK_ID' => $doctorsIblockId,
-    'NAME' => 'Процедуры',
-    'CODE' => 'PROCEDURES',
-    'PROPERTY_TYPE' => 'E',
-    'LINK_IBLOCK_ID' => $proceduresIblockId,
-    'MULTIPLE' => 'Y',
-    'ACTIVE' => 'Y'
-]);
-
-createPropertyIfNotExists([
-    'IBLOCK_ID' => $doctorsIblockId,
-    'NAME' => 'Кабинет',
-    'CODE' => 'CABINET',
-    'PROPERTY_TYPE' => 'L',
-    'LIST_TYPE' => 'L',
-    'ACTIVE' => 'Y',
-    'VALUES' => [
-        ['VALUE' => '№1'], ['VALUE' => '№2'], ['VALUE' => '№3'],
-        ['VALUE' => '№4'], ['VALUE' => '№5'], ['VALUE' => '№6'],
-        ['VALUE' => '№7'], ['VALUE' => '№8'], ['VALUE' => '№9'],
-    ]
-]);
-
-// --- Демо процедуры ---
-fillDemoData($proceduresIblockId, [
-    ['NAME' => 'УЗИ'], ['NAME' => 'ЭКГ'], ['NAME' => 'МРТ'], ['NAME' => 'КТ'],
-    ['NAME' => 'Рентгенография'], ['NAME' => 'Эндоскопия'], ['NAME' => 'Колоноскопия'],
-    ['NAME' => 'Гастроскопия'], ['NAME' => 'Лабораторные анализы крови'], ['NAME' => 'Функциональная диагностика'],
-]);
-
-// --- Получаем ID процедур ---
-$procedures = [];
-$rsProc = CIBlockElement::GetList([], ['IBLOCK_ID' => $proceduresIblockId], false, false, ['ID']);
-while ($p = $rsProc->Fetch()) {
-    $procedures[] = $p['ID'];
-}
-
-// --- Получаем ID значений кабинета ---
-$cabinetProp = CIBlockProperty::GetList([], ['IBLOCK_ID' => $doctorsIblockId, 'CODE' => 'CABINET'])->Fetch();
-$cabinetValues = [];
-$enum = CIBlockPropertyEnum::GetList([], ['PROPERTY_ID' => $cabinetProp['ID']]);
-while ($val = $enum->Fetch()) $cabinetValues[] = $val['ID'];
-
-// --- Демо доктора с рандомными кабинетами ---
-$demoDoctors = [
-    'Иванов Иван Иванович' => [$procedures[0], $procedures[1]],
-    'Петров Петр Петрович' => [$procedures[2]],
-    'Сидорова Анна Сергеевна' => [$procedures[0]],
-    'Кузнецов Дмитрий Олегович' => [$procedures[3], $procedures[4]],
-    'Морозова Елена Викторовна' => [$procedures[8]],
-    'Алексеев Михаил Андреевич' => [$procedures[5], $procedures[6]],
-    'Романова Ольга Николаевна' => [$procedures[7]],
-    'Захаров Артем Валерьевич' => [$procedures[1], $procedures[9]],
-    'Белова Наталья Игоревна' => [$procedures[0], $procedures[9]],
-];
-
-$demoElements = [];
-foreach ($demoDoctors as $name => $procIds) {
-    $randomCabinetId = $cabinetValues[array_rand($cabinetValues)]; // случайный кабинет
-    $demoElements[] = [
-        'NAME' => $name,
-        'PROPS' => [
-            'CABINET' => $randomCabinetId,
-            'PROCEDURES' => $procIds
-        ]
-    ];
-}
-fillDemoData($doctorsIblockId, $demoElements);
-
-$res = CIBlockElement::GetList(['NAME'=>'ASC'], ['IBLOCK_ID'=>$doctorsIblockId,'ACTIVE'=>'Y'], false, false, ['ID','NAME']);
-
-echo '<h2>Список докторов</h2>';
-
-while ($doctor = $res->GetNextElement()) {
-    $fields = $doctor->GetFields();
-    $props = $doctor->GetProperties();
-
-    echo '<div style="margin-bottom:15px;">';
-    echo '<strong>' . htmlspecialcharsbx($fields['NAME']) . '</strong><br>';
-    echo 'Кабинет: ' . htmlspecialcharsbx($props['CABINET']['VALUE']) . '<br>';
-
-    if (!empty($props['PROCEDURES']['VALUE'])) {
+    if ($doctor && !empty($doctor['PROCEDURES'])) {
         $procNames = [];
-        $rsP = CIBlockElement::GetList([], ['ID' => $props['PROCEDURES']['VALUE']], false, false, ['NAME']);
-        while ($p = $rsP->Fetch()) $procNames[] = $p['NAME'];
-        echo 'Процедуры: ' . implode(', ', $procNames);
+        foreach ($doctor['PROCEDURES'] as $id) {
+            if (isset($proceduresMap[$id])) {
+                $procNames[] = $proceduresMap[$id];
+            }
+        }
+        $doctor['PROCEDURES'] = $procNames;
+    }
+    ?>
+    <div class="doctor-detail-card">
+        <div class="doctor-detail-header">
+            <div class="doctor-photo">
+                <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="60" cy="60" r="60" fill="#ccc"/>
+                    <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#666" font-size="14">Фото</text>
+                </svg>
+            </div>
+            <div class="doctor-info" style="width: 100%;">
+                <div style="display: flex; width: 100%;">
+                    <div style="width: 50%;">
+                        <h2><?= htmlspecialchars($doctor['DOCTOR_NAME']) ?></h2>
+                        <div class="cabinet">Кабинет: <?= htmlspecialchars($doctor['CABINET']) ?></div>
+                        <?php if (!empty($doctor['PROCEDURES'])): ?>
+                            <h4>Процедуры:</h4>
+                            <ul class="procedures">
+                                <?php foreach ($doctor['PROCEDURES'] as $procName): ?>
+                                    <li><?= htmlspecialchars($procName) ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        <?php endif; ?>
+                    </div>
+                    <div style="width: 50%;">
+                        <form method="post">
+                            <label for="procedures">Добавить / изменить процедуры:</label><br>
+                            <select name="procedures[]" id="procedures" multiple size="6">
+                                <?php foreach ($proceduresMap as $id => $name): ?>
+                                    <option value="<?= $id ?>" <?= in_array($id, $doctor['PROCEDURES'] ?? []) ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($name) ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select><br><br>
+                            <button type="submit">Сохранить</button>
+                        </form>
+                    </div>
+                </div>
+                <a href="/doctors/" class="back-link">← Вернуться к списку врачей</a>
+            </div>
+        </div>
+    </div>
+    <?php
+} else {
+    $doctors = DoctorsTable::getList([
+        'select' => ['DOCTOR_ID' => 'ELEMENT.ID', 'DOCTOR_NAME' => 'ELEMENT.NAME', 'CABINET', 'PROCEDURES']
+    ])->fetchAll();
+
+    $allProcedureIds = [];
+    foreach ($doctors as $doctor) {
+        if (!empty($doctor['PROCEDURES'])) {
+            $allProcedureIds = array_merge($allProcedureIds, $doctor['PROCEDURES']);
+        }
+    }
+    $allProcedureIds = array_unique($allProcedureIds);
+
+    $dbProcedures = ElementTable::getList([
+        'filter' => ['IBLOCK_ID' => $proceduresIblockId, 'ID' => $allProcedureIds],
+        'select' => ['ID', 'NAME']
+    ])->fetchAll();
+
+    $proceduresMap = [];
+    foreach ($dbProcedures as $proc) {
+        $proceduresMap[$proc['ID']] = $proc['NAME'];
     }
 
-    echo '</div>';
-}
-
-?>
+    foreach ($doctors as &$doctor) {
+        if (!empty($doctor['PROCEDURES'])) {
+            $procNames = [];
+            foreach ($doctor['PROCEDURES'] as $id) {
+                if (isset($proceduresMap[$id])) {
+                    $procNames[] = $proceduresMap[$id];
+                }
+            }
+            $doctor['PROCEDURES'] = $procNames;
+        }
+    }
+    unset($doctor);
+    ?>
+    <div class="doctors-grid">
+        <?php foreach ($doctors as $doctor): ?>
+            <div class="doctor-card">
+                <h3><?= htmlspecialchars($doctor['DOCTOR_NAME']) ?></h3>
+                <div class="cabinet">Кабинет: <?= htmlspecialchars($doctor['CABINET']) ?></div>
+                <?php if (!empty($doctor['PROCEDURES'])): ?>
+                    <ul class="procedures">
+                        <?php foreach ($doctor['PROCEDURES'] as $procName): ?>
+                            <li><?= htmlspecialchars($procName) ?></li>
+                        <?php endforeach; ?>
+                    </ul>
+                <?php endif; ?>
+                <a class="details-link" href="/doctors/?DOCTOR_ID=<?= $doctor['DOCTOR_ID'] ?>">Подробнее</a>
+            </div>
+        <?php endforeach; ?>
+    </div>
+<?php } ?>
 
 <?php require_once $_SERVER['DOCUMENT_ROOT'] . "/bitrix/footer.php"; ?>
