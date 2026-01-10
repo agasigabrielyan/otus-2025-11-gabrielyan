@@ -12,6 +12,7 @@
     padding: 15px;
     background: #f9f9f9;
     transition: box-shadow 0.3s ease;
+    min-width: 30%;
 }
 
 .doctor-card:hover {

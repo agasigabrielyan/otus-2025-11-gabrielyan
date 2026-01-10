@@ -1,5 +1,8 @@
 <?php
 require_once $_SERVER['DOCUMENT_ROOT'] . "/bitrix/header.php";
+/**
+ * @var $APPLICATION
+ */
 
 $APPLICATION->SetTitle("Приемный покой");
 
@@ -16,7 +19,6 @@ $proceduresIblock = \CIBlock::GetList([], ['CODE' => 'procedures'])->Fetch();
 $proceduresIblockId = (int)$proceduresIblock['ID'];
 
 if ($doctorId > 0) {
-
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['procedures'])) {
         $procedureIds = array_map('intval', $_POST['procedures']);
         \CIBlockElement::SetPropertyValuesEx($doctorId, $doctorsIblockId, ['PROCEDURES' => $procedureIds]);
@@ -24,15 +26,8 @@ if ($doctorId > 0) {
     }
 
     $doctor = DoctorsTable::getList([
-        'select' => [
-            'DOCTOR_ID' => 'ELEMENT.ID',
-            'DOCTOR_NAME' => 'ELEMENT.NAME',
-            'CABINET',
-            'PROCEDURES'
-        ],
-        'filter' => [
-            'ELEMENT.ID' => $doctorId
-        ]
+        'select' => ['DOCTOR_ID' => 'ELEMENT.ID', 'DOCTOR_NAME' => 'ELEMENT.NAME', 'CABINET', 'PROCEDURES'],
+        'filter' => ['ELEMENT.ID' => $doctorId]
     ])->fetch();
 
     $allProcedures = ElementTable::getList([
@@ -45,7 +40,9 @@ if ($doctorId > 0) {
         $proceduresMap[$proc['ID']] = $proc['NAME'];
     }
 
+    $formProcedureIds = [];
     if ($doctor && !empty($doctor['PROCEDURES'])) {
+        $formProcedureIds = $doctor['PROCEDURES'];
         $procNames = [];
         foreach ($doctor['PROCEDURES'] as $id) {
             if (isset($proceduresMap[$id])) {
@@ -67,7 +64,7 @@ if ($doctorId > 0) {
                 <div style="display: flex; width: 100%;">
                     <div style="width: 50%;">
                         <h2><?= htmlspecialchars($doctor['DOCTOR_NAME']) ?></h2>
-                        <div class="cabinet">Кабинет: <?= htmlspecialchars($doctor['CABINET']) ?></div>
+                        <div class="cabinet">Кабинет: № <?= htmlspecialchars($doctor['CABINET']) ?></div>
                         <?php if (!empty($doctor['PROCEDURES'])): ?>
                             <h4>Процедуры:</h4>
                             <ul class="procedures">
@@ -82,7 +79,7 @@ if ($doctorId > 0) {
                             <label for="procedures">Добавить / изменить процедуры:</label><br>
                             <select name="procedures[]" id="procedures" multiple size="6">
                                 <?php foreach ($proceduresMap as $id => $name): ?>
-                                    <option value="<?= $id ?>" <?= in_array($id, $doctor['PROCEDURES'] ?? []) ? 'selected' : '' ?>>
+                                    <option value="<?= $id ?>" <?= in_array($id, $formProcedureIds) ? 'selected' : '' ?>>
                                         <?= htmlspecialchars($name) ?>
                                     </option>
                                 <?php endforeach; ?>
@@ -100,6 +97,15 @@ if ($doctorId > 0) {
     $doctors = DoctorsTable::getList([
         'select' => ['DOCTOR_ID' => 'ELEMENT.ID', 'DOCTOR_NAME' => 'ELEMENT.NAME', 'CABINET', 'PROCEDURES']
     ])->fetchAll();
+
+    $uniqueDoctors = [];
+    foreach ($doctors as $doctor) {
+        $key = $doctor['DOCTOR_NAME'] . '|' . $doctor['CABINET'];
+        if (!isset($uniqueDoctors[$key]) || $doctor['DOCTOR_ID'] < $uniqueDoctors[$key]['DOCTOR_ID']) {
+            $uniqueDoctors[$key] = $doctor;
+        }
+    }
+    $doctors = array_values($uniqueDoctors);
 
     $allProcedureIds = [];
     foreach ($doctors as $doctor) {
@@ -136,7 +142,7 @@ if ($doctorId > 0) {
         <?php foreach ($doctors as $doctor): ?>
             <div class="doctor-card">
                 <h3><?= htmlspecialchars($doctor['DOCTOR_NAME']) ?></h3>
-                <div class="cabinet">Кабинет: <?= htmlspecialchars($doctor['CABINET']) ?></div>
+                <div class="cabinet">Кабинет: № <?= htmlspecialchars($doctor['CABINET']) ?></div>
                 <?php if (!empty($doctor['PROCEDURES'])): ?>
                     <ul class="procedures">
                         <?php foreach ($doctor['PROCEDURES'] as $procName): ?>
