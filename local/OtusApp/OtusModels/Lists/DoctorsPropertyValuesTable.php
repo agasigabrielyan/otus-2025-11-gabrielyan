@@ -7,7 +7,7 @@ use OtusApp\OtusModels\AbstractIblockPropertyValuesTable;
 
 class DoctorsPropertyValuesTable extends AbstractIblockPropertyValuesTable
 {
-    public const IBLOCK_ID = 33;
+    public const IBLOCK_ID = 19;
 
     public static function getMap(): array
     {

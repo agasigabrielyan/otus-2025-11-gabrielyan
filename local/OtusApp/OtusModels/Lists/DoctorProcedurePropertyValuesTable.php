@@ -6,5 +6,5 @@ use OtusApp\OtusModels\AbstractIblockPropertyValuesTable;
 
 class DoctorProcedurePropertyValuesTable extends AbstractIblockPropertyValuesTable
 {
-    const IBLOCK_ID = 32;
+    const IBLOCK_ID = 18;
 }
