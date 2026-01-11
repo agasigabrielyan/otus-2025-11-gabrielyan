@@ -12,7 +12,8 @@
     padding: 15px;
     background: #f9f9f9;
     transition: box-shadow 0.3s ease;
-    min-width: 30%;
+    min-width: 30%!important;
+    max-width: 30% !important
 }
 
 .doctor-card:hover {
@@ -190,3 +191,45 @@
         width: 100%;
     }
 }
+
+.new-doctor-form {
+    border: 1px solid #ccc;
+    padding: 20px;
+    margin-top: 30px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    max-width: 600px;
+}
+.new-doctor-form h3 {
+    margin-bottom: 15px;
+    font-size: 20px;
+}
+.new-doctor-form input[type="text"],
+.new-doctor-form select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+}
+.new-doctor-form button.btn-save {
+    background-color: #4CAF50;
+    color: #fff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.new-doctor-form button.btn-save:hover {
+    background-color: #45a049;
+}
+.doctor-message {
+    padding: 10px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    font-weight: bold;
+}
+.doctor-message.success { border: 1px solid #4CAF50; color: #2E7D32; }
+.doctor-message.error { border: 1px solid #f44336; color: #C62828; }

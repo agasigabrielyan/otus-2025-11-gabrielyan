@@ -1,15 +1,15 @@
 <?php
 require_once $_SERVER['DOCUMENT_ROOT'] . "/bitrix/header.php";
+
 /**
  * @var $APPLICATION
  */
-
-$APPLICATION->SetTitle("Доктора (Приемный покой)");
 
 use OtusApp\OtusDoctors\MyOtusDoctorsIblockCreation;
 use OtusApp\OtusModels\Lists\DoctorsPropertyValuesTable as DoctorsTable;
 use Bitrix\Iblock\ElementTable;
 
+$APPLICATION->SetTitle("Доктора (Приемный покой)");
 \Bitrix\Main\Page\Asset::getInstance()->addCss("/doctors/otus-doctors.css");
 
 $doctorsIblockId = MyOtusDoctorsIblockCreation::migrateAndFillDemoData();
@@ -18,6 +18,70 @@ $doctorId = isset($_GET['DOCTOR_ID']) ? (int)$_GET['DOCTOR_ID'] : 0;
 $proceduresIblock = \CIBlock::GetList([], ['CODE' => 'procedures'])->Fetch();
 $proceduresIblockId = (int)$proceduresIblock['ID'];
 
+$allProcedures = ElementTable::getList([
+    'filter' => ['IBLOCK_ID' => $proceduresIblockId],
+    'select' => ['ID', 'NAME']
+])->fetchAll();
+
+$proceduresMap = [];
+foreach ($allProcedures as $proc) {
+    $proceduresMap[$proc['ID']] = $proc['NAME'];
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['new_doctor_name'], $_POST['new_cabinet'])) {
+    $newDoctorName = trim($_POST['new_doctor_name']);
+    $newCabinet = trim($_POST['new_cabinet']);
+    $newProcedureIds = isset($_POST['new_procedures']) ? array_map('intval', $_POST['new_procedures']) : [];
+
+    $el = new \CIBlockElement;
+    $fields = [
+        "IBLOCK_ID" => $doctorsIblockId,
+        "NAME" => $newDoctorName,
+        "ACTIVE" => "Y",
+        "PROPERTY_VALUES" => [
+            "CABINET" => $newCabinet,
+            "PROCEDURES" => $newProcedureIds
+        ]
+    ];
+
+    $newDoctorId = $el->Add($fields);
+
+    if ($newDoctorId) {
+        DoctorsTable::add([
+            'ELEMENT_ID' => $newDoctorId,
+            'PROCEDURES' => $newProcedureIds
+        ]);
+        echo "<div style='color:green; padding:10px; border:1px solid green; margin-bottom:10px;'>
+            Новый доктор '{$newDoctorName}' успешно создан. <a href='/doctors/?DOCTOR_ID={$newDoctorId}'>Перейти к карточке</a>
+        </div>";
+    } else {
+        echo "<div style='color:red; padding:10px; border:1px solid red; margin-bottom:10px;'>
+            Ошибка при создании доктора: " . $el->LAST_ERROR . "
+        </div>";
+    }
+}
+
+?>
+<div class="new-doctor-form" style="border:1px solid #ccc; padding:15px; margin-bottom:20px;">
+    <h3>Добавить нового доктора</h3>
+    <form method="post">
+        <label>Имя доктора:</label><br>
+        <input type="text" name="new_doctor_name" required style="width:50%;"><br><br>
+
+        <input type="hidden" value="18" name="new_cabinet"><br><br>
+
+        <label>Процедуры:</label><br>
+        <select name="new_procedures[]" multiple size="6" style="width:50%;">
+            <?php foreach ($proceduresMap as $id => $name): ?>
+                <option value="<?= $id ?>"><?= htmlspecialchars($name) ?></option>
+            <?php endforeach; ?>
+        </select><br><br>
+
+        <button type="submit">Добавить доктора</button>
+    </form>
+</div>
+
+<?php
 if ($doctorId > 0) {
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['procedures'])) {
         $procedureIds = array_map('intval', $_POST['procedures']);
@@ -29,16 +93,6 @@ if ($doctorId > 0) {
         'select' => ['DOCTOR_ID' => 'ELEMENT.ID', 'DOCTOR_NAME' => 'ELEMENT.NAME', 'CABINET', 'PROCEDURES'],
         'filter' => ['ELEMENT.ID' => $doctorId]
     ])->fetch();
-
-    $allProcedures = ElementTable::getList([
-        'filter' => ['IBLOCK_ID' => $proceduresIblockId],
-        'select' => ['ID', 'NAME']
-    ])->fetchAll();
-
-    $proceduresMap = [];
-    foreach ($allProcedures as $proc) {
-        $proceduresMap[$proc['ID']] = $proc['NAME'];
-    }
 
     $formProcedureIds = [];
     if ($doctor && !empty($doctor['PROCEDURES'])) {
@@ -64,7 +118,6 @@ if ($doctorId > 0) {
                 <div style="display: flex; width: 100%;">
                     <div style="width: 50%;">
                         <h2><?= htmlspecialchars($doctor['DOCTOR_NAME']) ?></h2>
-                        <div class="cabinet">Кабинет: № <?= htmlspecialchars($doctor['CABINET']) ?></div>
                         <?php if (!empty($doctor['PROCEDURES'])): ?>
                             <h4>Процедуры:</h4>
                             <ul class="procedures">
@@ -95,7 +148,8 @@ if ($doctorId > 0) {
     <?php
 } else {
     $doctors = DoctorsTable::getList([
-        'select' => ['DOCTOR_ID' => 'ELEMENT.ID', 'DOCTOR_NAME' => 'ELEMENT.NAME', 'CABINET', 'PROCEDURES']
+        'select' => ['DOCTOR_ID' => 'ELEMENT.ID', 'DOCTOR_NAME' => 'ELEMENT.NAME', 'CABINET', 'PROCEDURES'],
+        'order' => ['DOCTOR_ID' => 'DESC'],
     ])->fetchAll();
 
     $uniqueDoctors = [];
@@ -142,7 +196,6 @@ if ($doctorId > 0) {
         <?php foreach ($doctors as $doctor): ?>
             <div class="doctor-card">
                 <h3><?= htmlspecialchars($doctor['DOCTOR_NAME']) ?></h3>
-                <div class="cabinet">Кабинет: № <?= htmlspecialchars($doctor['CABINET']) ?></div>
                 <?php if (!empty($doctor['PROCEDURES'])): ?>
                     <ul class="procedures">
                         <?php foreach ($doctor['PROCEDURES'] as $procName): ?>
