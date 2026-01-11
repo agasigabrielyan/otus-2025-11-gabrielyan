@@ -62,6 +62,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['new_doctor_name'], $_
 }
 
 ?>
+<div>
+    <div class="mb-3">Репозиторий: <a target="_blank" href="https://github.com/agasigabrielyan/otus-2025-11-gabrielyan">https://github.com/agasigabrielyan/otus-2025-11-gabrielyan</a></div>
+    <div class="mb-3">Файл модели : <a target="_blank" href="/bitrix/admin/fileman_file_edit.php?path=%2Flocal%2FOtusApp%2FOtusModels%2FLists%2FDoctorsPropertyValuesTable.php&full_src=Y&site=s1&lang=ru&&filter=Y&set_filter=Y">
+            /bitrix/admin/fileman_file_edit.php?path=%2Flocal%2FOtusApp%2FOtusModels%2FLists%2FDoctorsPropertyValuesTable.php&full_src=Y&site=s1&lang=ru&&filter=Y&set_filter=Y
+        </a>
+    </div>
+</div>
 <div class="new-doctor-form" style="border:1px solid #ccc; padding:15px; margin-bottom:20px;">
     <h3>Добавить нового доктора</h3>
     <form method="post">
