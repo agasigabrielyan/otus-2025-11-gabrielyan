@@ -24,7 +24,9 @@ if (!empty($currency['DATE_UPDATE']) && $currency['DATE_UPDATE'] instanceof \Bit
 
         <td>
             <time datetime="<?= $currency['DATE_UPDATE'] ?>">
-                <?= $date ?: '—'; ?>
+                <b>
+                    <?= $date ?: '—'; ?>
+                </b>
             </time>
         </td>
     </tr>
