@@ -10,6 +10,18 @@ if (!empty($currency['DATE_UPDATE']) && $currency['DATE_UPDATE'] instanceof \Bit
     $date = $currency['DATE_UPDATE']->format('d.m.Y H:i');
 }
 ?>
+
+<div>
+    <div class="mb-3">Репозиторий: <a target="_blank" href="https://github.com/agasigabrielyan/otus-2025-11-gabrielyan">https://github.com/agasigabrielyan/otus-2025-11-gabrielyan</a></div>
+    <div class="mb-3">Класс компонента:
+        <a
+                target="_blank"
+                href="/bitrix/admin/fileman_file_edit.php?path=%2Flocal%2Fcomponents%2FOtus%2FOtusCurrencies%2Fclass.php&full_src=Y&site=s1&lang=ru&&filter=Y&set_filter=Y">
+            /bitrix/admin/fileman_file_edit.php?path=%2Flocal%2Fcomponents%2FOtus%2FOtusCurrencies%2Fclass.php&full_src=Y&site=s1&lang=ru&&filter=Y&set_filter=Y
+        </a>
+    </div>
+</div>
+
 <h2>Выбранная валюта</h2>
 <table class="bordered" style="width: 50%;">
     <tr>
