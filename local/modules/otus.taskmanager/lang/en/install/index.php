@@ -6,5 +6,4 @@ $MESS['PARTNER_URI'] = 'http://otus.ru';
 $MESS['MODULE_LOAD_FAILED'] = 'Ошибка загрузки файла';
 $MESS['OTUS_TASKMANAGER_INSTALL_TITLE'] = 'Установка модуля TASK MANAGER';
 $MESS['OTUS_TASKMANAGER_UNINSTALL_TITLE'] = 'Удаление модуля TASK MANAGER';
-$MESS['OTUS_TASKMANAGER_UPDATE_SUCCESS'] = "Поля успешно обновлены добавлены свойство в Инфоблок и поле в таблицу логов";
 ?>

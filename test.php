@@ -1,6 +1,14 @@
 <?php require ($_SERVER['DOCUMENT_ROOT'] . '/bitrix/header.php');
-use Symfony\Component\VarDumper\VarDumper;
-VarDumper::dump($_SERVER);
+/**
+ * @var $APPLICATION
+ */
 ?>
-
+<?php
+    $APPLICATION->IncludeComponent(
+        'Devconsult:Books',
+        '.default',
+        [],
+        false
+    );
+?>
 <?php require ($_SERVER['DOCUMENT_ROOT'] . '/bitrix/footer.php'); ?>
