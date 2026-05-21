@@ -1,0 +1,42 @@
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
+    -webkit-box-pack: center;
+        -ms-flex-pack: center;
+            justify-content: center;
+    background: rgba(0,0,0,0.45);
+}
+
+.modal-box {
+    position: relative;
+    min-width: 320px;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: auto;
+    padding: 24px;
+    background: #fff;
+    border-radius: 8px;
+    -webkit-box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+}
+
+.modal-box__close {
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.fade-enter-active, .fade-levae-to {opacity: 0;}
+.fade-enter-from, .fade-leave-to {opacity: 0;}

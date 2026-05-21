@@ -1,4 +1,7 @@
 import { BitrixVue } from "ui.vue3";
+import Home from "./components/Home";
+
+import "./assets/global.css";
 
 class App {
 	#application;
@@ -16,6 +19,9 @@ class App {
 		const context = this;
 
 		this.#application = BitrixVue.createApp({
+			components: {
+				Home
+			},
 			data() {
 				return {
 					arResult: context.options.arResult || {},
@@ -26,7 +32,9 @@ class App {
 				this.$bitrix.Application.set(context)
 			},
 			template: `
-				<div class="periodlock-app">Мое приложение для этого</div>
+				<div>
+					<Home />
+				</div>
 			`
 		});
 

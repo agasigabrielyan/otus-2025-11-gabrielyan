@@ -7,7 +7,7 @@ $APPLICATION->SetTitle("Моя тестовая страница");
 
 use Bitrix\Main\UI\Extension;
 Extension::load("mycompany.periodlock.app");
-?>Мое приложение для этого
+?>
 <div id="periodlock-app"></div>
 <script>
     const app = new BX.Mycompany.Periodlock.App('#periodlock-app',{
