@@ -16,7 +16,7 @@ use Bitrix\Main\UserTable;
  *
  * ENTITY_CODE — код сущности/раздела (например: revenue, direct_costs, products).
  * DATE_FROM, DATE_TO — период запрета/блокировки редактирования.
- * IS_LOCKED — Y: период закрыт, N: открыт.
+ * Период закрыт, если сегодня попадает в этот диапазон (наличие записи + даты).
  */
 class PeriodLockTable extends DataManager
 {
@@ -56,6 +56,14 @@ class PeriodLockTable extends DataManager
                         'ALTER TABLE ' . $tableName
                         . ' MODIFY DATE_FROM DATE NOT NULL, MODIFY DATE_TO DATE NOT NULL'
                     );
+
+                    $tableFields = array_change_key_case($connection->getTableFields($tableName), CASE_UPPER);
+                }
+
+                if (isset($tableFields['IS_LOCKED'])) {
+                    $connection->queryExecute(
+                        'ALTER TABLE ' . $tableName . ' DROP COLUMN IS_LOCKED'
+                    );
                 }
             }
 
@@ -92,11 +100,6 @@ class PeriodLockTable extends DataManager
 
             new DateField('DATE_TO', [
                 'required' => true,
-            ]),
-
-            new Entity\BooleanField('IS_LOCKED', [
-                'values' => ['N', 'Y'],
-                'default_value' => 'N',
             ]),
 
             new Entity\IntegerField('LOCKED_BY', [
