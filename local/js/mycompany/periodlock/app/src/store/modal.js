@@ -8,7 +8,7 @@ export const useModalStore = defineStore('modal', {
         props: {},
     }),
 
-    action: {
+    actions: {
         open(component, props={}) {
             this.component = markRaw(component);
             this.props = props;

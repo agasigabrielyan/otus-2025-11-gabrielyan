@@ -1,5 +1,9 @@
 import { BitrixVue } from "ui.vue3";
 import Home from "./components/Home";
+import { createPinia } from 'ui.vue3.pinia';
+import Modal from './components/Modal';
+import { useModalStore } from './store/modal';
+import { useAppStore } from "./store/app";
 
 import "./assets/global.css";
 
@@ -18,9 +22,12 @@ class App {
 	initVue() {
 		const context = this;
 
+		const pinia = createPinia();
+
 		this.#application = BitrixVue.createApp({
 			components: {
-				Home
+				Home,
+				Modal
 			},
 			data() {
 				return {
@@ -29,15 +36,26 @@ class App {
 				}
 			},
 			created() {
-				this.$bitrix.Application.set(context)
+				this.$bitrix.Application.set(context);
+				const appStore = useAppStore();
+				appStore.setArResult(this.arResult);
+				appStore.setArParams(this.arParams);
+				appStore.fetchLockStates();
+			},
+			methods: {
+				openTestAlert() {
+					alert('hi there');
+				}
 			},
 			template: `
 				<div>
 					<Home />
+					<Modal />
 				</div>
 			`
 		});
 
+		this.#application.use(pinia);
 		this.#application.mount(this.rootNode);
 
 	}

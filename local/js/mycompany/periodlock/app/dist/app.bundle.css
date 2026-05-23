@@ -38,5 +38,25 @@
     cursor: pointer;
 }
 
-.fade-enter-active, .fade-levae-to {opacity: 0;}
-.fade-enter-from, .fade-leave-to {opacity: 0;}
+.fade-enter-active,
+.fade-leave-active {
+    -webkit-transition: opacity 0.25s ease;
+    -o-transition: opacity 0.25s ease;
+    transition: opacity 0.25s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+
+.period-lock__wrapper {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+}
+
+.popup-lockform {
+    width: 520px;
+    height: 320px;
+}

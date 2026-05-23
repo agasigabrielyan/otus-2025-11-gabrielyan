@@ -12,7 +12,9 @@ Extension::load("mycompany.periodlock.app");
 <script>
     const app = new BX.Mycompany.Periodlock.App('#periodlock-app',{
         arResult: {message: 'SOME ARRESULT'},
-        arParams: {mode: 'some arparams'}
+        arParams: {
+            entityCode: 'milestones'
+        }
     });
     app.start();
 </script>
