@@ -44,7 +44,7 @@ class App {
 			},
 			methods: {
 				openTestAlert() {
-					alert('hi there');
+					//alert('hi there');
 				}
 			},
 			template: `

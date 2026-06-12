@@ -58,5 +58,164 @@
 
 .popup-lockform {
     width: 520px;
-    height: 320px;
+    min-height: 320px;
+}
+
+.period-lock-wizard__title {
+    margin: 0 0 16px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.period-lock-wizard__viewport {
+    position: relative;
+    overflow: hidden;
+    min-height: 200px;
+}
+
+.period-lock-wizard__step {
+    width: 100%;
+}
+
+.period-lock-wizard__label {
+    margin: 0 0 12px;
+    font-weight: 500;
+}
+
+.period-lock-wizard__select {
+    width: 100%;
+    padding: 8px;
+    font-size: 14px;
+}
+
+.period-lock-wizard__period-row {
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.period-lock-wizard__period-fields {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    gap: 12px;
+}
+
+.period-lock-wizard__period-fields label {
+    -webkit-box-flex: 1;
+        -ms-flex: 1;
+            flex: 1;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+        -ms-flex-direction: column;
+            flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    color: #666;
+}
+
+.period-lock-wizard__period-fields input {
+    padding: 6px 8px;
+    font-size: 14px;
+}
+
+.period-lock-wizard__role {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+}
+
+.period-lock-wizard__error {
+    margin: 8px 0 0;
+    color: #c00;
+    font-size: 13px;
+}
+
+.period-lock-wizard__actions {
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #eee;
+}
+
+.period-lock-wizard__actions-spacer {
+    -webkit-box-flex: 1;
+        -ms-flex: 1;
+            flex: 1;
+}
+
+.period-lock-wizard__btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+}
+
+.period-lock-wizard__btn--primary {
+    border-color: #2fc6f6;
+    background: #2fc6f6;
+    color: #fff;
+}
+
+.period-lock-wizard__btn--text {
+    border: none;
+    background: transparent;
+    color: #2fc6f6;
+    padding: 4px 0;
+}
+
+.wizard-slide-forward-enter-active,
+.wizard-slide-forward-leave-active,
+.wizard-slide-back-enter-active,
+.wizard-slide-back-leave-active {
+    -webkit-transition: opacity 0.3s ease, -webkit-transform 0.3s ease;
+    transition: opacity 0.3s ease, -webkit-transform 0.3s ease;
+    -o-transition: transform 0.3s ease, opacity 0.3s ease;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    transition: transform 0.3s ease, opacity 0.3s ease, -webkit-transform 0.3s ease;
+}
+
+.wizard-slide-forward-enter-from {
+    -webkit-transform: translateX(40px);
+        -ms-transform: translateX(40px);
+            transform: translateX(40px);
+    opacity: 0;
+}
+
+.wizard-slide-forward-leave-to {
+    -webkit-transform: translateX(-40px);
+        -ms-transform: translateX(-40px);
+            transform: translateX(-40px);
+    opacity: 0;
+}
+
+.wizard-slide-back-enter-from {
+    -webkit-transform: translateX(-40px);
+        -ms-transform: translateX(-40px);
+            transform: translateX(-40px);
+    opacity: 0;
+}
+
+.wizard-slide-back-leave-to {
+    -webkit-transform: translateX(40px);
+        -ms-transform: translateX(40px);
+            transform: translateX(40px);
+    opacity: 0;
 }

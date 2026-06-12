@@ -31,6 +31,19 @@
     });
 
     EventManager::getInstance()->addEventHandler(
+        'main',
+        'OnUserTypeBuildList',
+        static function () {
+            $file = $_SERVER['DOCUMENT_ROOT'] . '/local/practice/ui-customization/uf_type_register.php';
+            if (is_file($file)) {
+                return require $file;
+            }
+
+            return null;
+        }
+    );
+
+    EventManager::getInstance()->addEventHandler(
         "main",
         "OnProlog",
         static function(): void {
@@ -39,10 +52,33 @@
                 return;
             }
 
-            $file = $_SERVER['DOCUMENT_ROOT'] . '/local/practice/ui-customization/deffered_demo.php';
-            if(is_file($file)) {
-                require $file;
+            $jsExtFile = $_SERVER['DOCUMENT_ROOT'] . '/local/practice/ui-customization/js_ext_demo.php';
+            if (is_file($jsExtFile)) {
+                require $jsExtFile;
             }
 
         }
     );
+
+EventManager::getInstance()->addEventHandler(
+    'main',
+    'OnUserTypeBuildList',
+    static function () {
+        $file = $_SERVER['DOCUMENT_ROOT'] . '/local/Currentcompany/ui-customization/uf_type_register.php';
+        if (is_file($file)) {
+            return require $file;
+        }
+        return null;
+    }
+);
+
+EventManager::getInstance()->addEventHandler(
+    'main',
+    'OnProlog',
+    static function (): void {
+        $file = $_SERVER['DOCUMENT_ROOT'] . '/local/Currentcompany/ui-customization/uf_field_lazy_install.php';
+        if (is_file($file)) {
+            require_once $file;
+        }
+    }
+);

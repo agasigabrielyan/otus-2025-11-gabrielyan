@@ -6,7 +6,7 @@ BX.Otus.BookGrid = {
         this.signedParams = data.signedParams;
     },
     showMessage: function(message) {
-        alert(message);
+        //alert(message);
     },
     addBook: function() {
         const titleInput = document.getElementById('book-title');

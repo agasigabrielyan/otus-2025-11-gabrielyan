@@ -1,7 +1,7 @@
 import { defineComponent } from "ui.vue3";
 import { useModalStore } from "../store/modal";
 import { useAppStore } from "../store/app";
-import PeriodChooseForm from "./PeriodChooseForm";
+import PeriodLockWizard from "./PeriodLockWizard";
 
 export default defineComponent({
     name: "Home",
@@ -11,7 +11,7 @@ export default defineComponent({
         const app = useAppStore();
 
         const openChangePeriodLockForm = () => {
-            modal.open(PeriodChooseForm,{});
+            modal.open(PeriodLockWizard, {});
         }
 
         return {
