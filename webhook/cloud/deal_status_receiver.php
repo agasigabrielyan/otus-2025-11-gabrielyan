@@ -28,7 +28,7 @@ logLine("incoming event={$event}, deal_id={$dealId}, raw={$raw}", $logFile);
 if ($event === 'ONCRMDEALUPDATE' && $dealId > 0) {
     // Вставь реальный код входящего вебхука облака вместо PASTE_WEBHOOK_CODE
     $cloudWebhook = 'https://b24-1jxzsv.bitrix24.ru/rest/1/9f6ox41myp4u28eu/';
-    if (strpos($cloudWebhook, '9f6ox41myp4u28eu') !== false) {
+    if (strpos($cloudWebhook, 'PASTE_WEBHOOK_CODE') !== false) {
         logLine('skip: cloud webhook code is not configured', $logFile);
     } else {
         $url = rtrim($cloudWebhook, '/') . '/crm.deal.get.json?id=' . $dealId;
@@ -45,6 +45,7 @@ if ($event === 'ONCRMDEALUPDATE' && $dealId > 0) {
         if ($json === false || $json === '') {
             logLine('crm.deal.get failed: ' . $curlError, $logFile);
         } else {
+            logLine('crm.deal.get raw=' . $json, $logFile);
             $resp = json_decode((string)$json, true);
             $stageId = (string)($resp['result']['STAGE_ID'] ?? '');
             $title = (string)($resp['result']['TITLE'] ?? '');
