@@ -7,22 +7,29 @@ function callBitrixRest(string $domain, string $authId, string $method, array $p
     $url = 'https://' . $domain . '/rest/' . $method . '.json';
     $params['auth'] = $authId;
 
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => http_build_query($params),
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_TIMEOUT => 20,
+    $context = stream_context_create([
+        'http' => [
+            'method' => 'POST',
+            'header' => "Content-Type: application/x-www-form-urlencoded\r\n",
+            'content' => http_build_query($params),
+            'timeout' => 20,
+            'ignore_errors' => true,
+        ],
     ]);
 
-    $raw = curl_exec($ch);
-    $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
+    $raw = file_get_contents($url, false, $context);
+    if ($raw === false) {
+        return [
+            'data' => [
+                'error' => 'HTTP_REQUEST_FAILED',
+                'error_description' => 'Cannot call Bitrix REST from server',
+            ],
+        ];
+    }
 
-    $data = json_decode((string)$raw, true);
+    $data = json_decode($raw, true);
 
     return [
-        'http_code' => $httpCode,
         'data' => is_array($data) ? $data : ['raw' => $raw],
     ];
 }
