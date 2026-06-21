@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 final class AppConfig
 {
+
+
+
     public static function load(): array
     {
         $path = dirname(__DIR__) . '/config.php';
