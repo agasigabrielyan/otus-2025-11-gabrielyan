@@ -2,23 +2,22 @@
 
 declare(strict_types=1);
 
-use Bitrix\Main\Application;
-use Bitrix\Main\Type\DateTime;
-
 final class TenantRepository
 {
     private const TABLE = 'otus_marketapp_tenant';
 
     public function ensureTable(): void
     {
-        $connection = Application::getConnection();
+        $db = Database::connection();
+        $table = self::TABLE;
 
-        if ($connection->isTableExists(self::TABLE)) {
+        $result = $db->query("SHOW TABLES LIKE '{$table}'");
+        if ($result !== false && $result->num_rows > 0) {
             return;
         }
 
-        $connection->queryExecute(
-            'CREATE TABLE ' . self::TABLE . ' (
+        $db->query(
+            "CREATE TABLE {$table} (
                 ID INT UNSIGNED NOT NULL AUTO_INCREMENT,
                 MEMBER_ID VARCHAR(64) NOT NULL,
                 DOMAIN VARCHAR(255) NOT NULL,
@@ -29,68 +28,85 @@ final class TenantRepository
                 UPDATED_AT DATETIME NOT NULL,
                 PRIMARY KEY (ID),
                 UNIQUE KEY UX_MEMBER_ID (MEMBER_ID)
-            )'
+            )"
         );
+
+        if ($db->error) {
+            throw new RuntimeException('Не удалось создать таблицу: ' . $db->error);
+        }
     }
 
     public function save(string $memberId, array $data): void
     {
-        $connection = Application::getConnection();
-        $helper = $connection->getSqlHelper();
-        $now = new DateTime();
-
-        $fields = [
-            'MEMBER_ID' => $memberId,
-            'DOMAIN' => (string)($data['domain'] ?? ''),
-            'AUTH_ID' => (string)($data['auth_id'] ?? ''),
-            'REFRESH_ID' => (string)($data['refresh_id'] ?? ''),
-            'UPDATED_AT' => $now,
-        ];
-
-        if (!empty($data['auth_expires_at'])) {
-            $fields['AUTH_EXPIRES_AT'] = (int)$data['auth_expires_at'];
-        }
-
         $existing = $this->load($memberId);
+        $now = date('Y-m-d H:i:s');
+        $domain = (string)($data['domain'] ?? '');
+        $authId = (string)($data['auth_id'] ?? '');
+        $refreshId = (string)($data['refresh_id'] ?? '');
+        $expiresAt = !empty($data['auth_expires_at']) ? (int)$data['auth_expires_at'] : null;
 
         if ($existing === null) {
-            $fields['INSTALLED_AT'] = $now;
-            $connection->add(self::TABLE, $fields);
+            $stmt = Database::connection()->prepare(
+                'INSERT INTO ' . self::TABLE . ' (MEMBER_ID, DOMAIN, AUTH_ID, REFRESH_ID, AUTH_EXPIRES_AT, INSTALLED_AT, UPDATED_AT)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)'
+            );
+            $stmt->bind_param(
+                'ssssiss',
+                $memberId,
+                $domain,
+                $authId,
+                $refreshId,
+                $expiresAt,
+                $now,
+                $now
+            );
+            $stmt->execute();
+
+            if ($stmt->error) {
+                throw new RuntimeException('Не удалось сохранить tenant: ' . $stmt->error);
+            }
 
             return;
         }
 
-        unset($fields['MEMBER_ID']);
-
-        [$setSql] = $helper->prepareUpdate(self::TABLE, $fields);
-        $connection->queryExecute(
-            'UPDATE ' . $helper->quote(self::TABLE)
-            . ' SET ' . $setSql
-            . ' WHERE MEMBER_ID = \'' . $helper->forSql($memberId) . '\''
+        $stmt = Database::connection()->prepare(
+            'UPDATE ' . self::TABLE . '
+             SET DOMAIN = ?, AUTH_ID = ?, REFRESH_ID = ?, AUTH_EXPIRES_AT = ?, UPDATED_AT = ?
+             WHERE MEMBER_ID = ?'
         );
+        $stmt->bind_param(
+            'sssiss',
+            $domain,
+            $authId,
+            $refreshId,
+            $expiresAt,
+            $now,
+            $memberId
+        );
+        $stmt->execute();
+
+        if ($stmt->error) {
+            throw new RuntimeException('Не удалось обновить tenant: ' . $stmt->error);
+        }
     }
 
     public function load(string $memberId): ?array
     {
-        $connection = Application::getConnection();
-        $helper = $connection->getSqlHelper();
-
-        $result = $connection->query(
-            'SELECT * FROM ' . self::TABLE
-            . ' WHERE MEMBER_ID = \'' . $helper->forSql($memberId) . '\''
-            . ' LIMIT 1'
+        $stmt = Database::connection()->prepare(
+            'SELECT * FROM ' . self::TABLE . ' WHERE MEMBER_ID = ? LIMIT 1'
         );
-
-        $row = $result->fetch();
+        $stmt->bind_param('s', $memberId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
 
         return is_array($row) ? $row : null;
     }
 
     public function countAll(): int
     {
-        $connection = Application::getConnection();
-        $result = $connection->query('SELECT COUNT(*) AS CNT FROM ' . self::TABLE);
-        $row = $result->fetch();
+        $result = Database::connection()->query('SELECT COUNT(*) AS CNT FROM ' . self::TABLE);
+        $row = $result ? $result->fetch_assoc() : null;
 
         return (int)($row['CNT'] ?? 0);
     }
