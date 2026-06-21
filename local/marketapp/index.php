@@ -2,6 +2,12 @@
 
 declare(strict_types=1);
 
+// Bitrix24 проверяет URL запросом HEAD (ждёт код 200)
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'HEAD') {
+    http_response_code(200);
+    exit;
+}
+
 require_once __DIR__ . '/lib/bootstrap.php';
 
 $status = 'Не подключено к порталу';

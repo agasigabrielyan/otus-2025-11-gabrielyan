@@ -2,6 +2,14 @@
 
 declare(strict_types=1);
 
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+
+// Bitrix24 проверяет URL запросом HEAD (ждёт код 200)
+if ($method === 'HEAD') {
+    http_response_code(200);
+    exit;
+}
+
 require_once __DIR__ . '/lib/bootstrap.php';
 
 try {
@@ -21,6 +29,13 @@ try {
     ]);
 
     if ($auth['member_id'] === '') {
+        // Проверка доступности URL из кабинета партнёра (GET без параметров)
+        if ($method === 'GET' && ($input['event'] ?? '') !== 'ONAPPINSTALL') {
+            http_response_code(200);
+            echo 'ok';
+            exit;
+        }
+
         http_response_code(400);
         echo 'error: member_id is required';
         exit;
