@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Bitrix\Main\Application;
+use Bitrix\Main\Type\DateTime;
 
 final class TenantRepository
 {
@@ -36,7 +37,7 @@ final class TenantRepository
     {
         $connection = Application::getConnection();
         $helper = $connection->getSqlHelper();
-        $now = date('Y-m-d H:i:s');
+        $now = new DateTime();
 
         $fields = [
             'MEMBER_ID' => $memberId,
