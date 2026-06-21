@@ -18,7 +18,7 @@ final class TenantAuth
             if (is_array($json)) {
                 $input = array_replace_recursive($input, $json);
             }
-        }
+        }load
 
         return $input;
     }
