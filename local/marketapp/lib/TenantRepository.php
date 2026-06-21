@@ -21,10 +21,7 @@ final class TenantRepository
             'CREATE TABLE ' . self::TABLE . ' (
                 ID INT UNSIGNED NOT NULL AUTO_INCREMENT,
                 MEMBER_ID VARCHAR(64) NOT NULL,
-                DOMAINrequire_once __DIR__ . '/AppConfig.php';
-require_once __DIR__ . '/TenantAuth.php';
-require_once __DIR__ . '/TenantRepository.php';
-require_once __DIR__ . '/InstallLog.php'; VARCHAR(255) NOT NULL,
+                DOMAIN VARCHAR(255) NOT NULL,
                 AUTH_ID VARCHAR(512) NOT NULL,
                 REFRESH_ID VARCHAR(512) NOT NULL,
                 AUTH_EXPIRES_AT INT UNSIGNED NULL,
