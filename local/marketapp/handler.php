@@ -33,6 +33,7 @@ register_shutdown_function(static function (): void {
 });
 
 require_once __DIR__ . '/lib/TenantStorage.php';
+require_once __DIR__ . '/lib/BitrixOAuth.php';
 
 function callBitrixRest(string $domain, string $authId, string $method, array $params = []): array
 {
@@ -79,6 +80,51 @@ function callBitrixRest(string $domain, string $authId, string $method, array $p
     ];
 }
 
+function isExpiredTokenError(array $restData): bool
+{
+    $error = strtolower((string)($restData['error'] ?? ''));
+    return $error === 'expired_token';
+}
+
+function refreshTenantToken(TenantStorage $storage, string $memberId, array $tenant): array
+{
+    $refreshId = (string)($tenant['refresh_id'] ?? '');
+    if ($refreshId === '') {
+        return [
+            'ok' => false,
+            'error' => 'refresh_id missing in tenant',
+        ];
+    }
+
+    $configPath = __DIR__ . '/config.php';
+    if (!is_file($configPath)) {
+        return [
+            'ok' => false,
+            'error' => 'config.php missing',
+            'hint' => 'Copy config.example.php to config.php and paste client_id/client_secret',
+        ];
+    }
+
+    $oauth = BitrixOAuth::fromConfigFile($configPath);
+    $refresh = $oauth->refreshToken($refreshId);
+    if (!$refresh['ok']) {
+        return $refresh;
+    }
+
+    $tenant['auth_id'] = $refresh['access_token'];
+    if ($refresh['refresh_token'] !== '') {
+        $tenant['refresh_id'] = $refresh['refresh_token'];
+    }
+    $tenant['token_refreshed_at'] = date('c');
+
+    $storage->save($memberId, $tenant);
+
+    return [
+        'ok' => true,
+        'tenant' => $tenant,
+    ];
+}
+
 try {
     $memberId = (string)($_REQUEST['member_id'] ?? '');
     if ($memberId === '') {
@@ -111,17 +157,34 @@ try {
         marketappJsonError(500, 'tenant has no domain or auth_id');
     }
 
-    $rest = callBitrixRest($domain, $authId, 'crm.deal.list', [
+    $dealParams = [
         'select' => ['ID', 'TITLE', 'STAGE_ID'],
         'order' => ['ID' => 'DESC'],
         'start' => 0,
-    ]);
+    ];
+
+    $rest = callBitrixRest($domain, $authId, 'crm.deal.list', $dealParams);
+    $tokenRefreshed = false;
+
+    if (isExpiredTokenError($rest['data'])) {
+        $refreshResult = refreshTenantToken($storage, $memberId, $tenant);
+        if (!$refreshResult['ok']) {
+            marketappJsonError(401, 'token_refresh_failed', $refreshResult);
+        }
+
+        $tenant = $refreshResult['tenant'];
+        $authId = (string)$tenant['auth_id'];
+        $tokenRefreshed = true;
+
+        $rest = callBitrixRest($domain, $authId, 'crm.deal.list', $dealParams);
+    }
 
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode([
         'ok' => empty($rest['data']['error']),
         'member_id' => $memberId,
         'domain' => $domain,
+        'token_refreshed' => $tokenRefreshed,
         'deals' => $rest['data']['result'] ?? [],
         'rest_error' => $rest['data']['error'] ?? null,
         'rest_error_description' => $rest['data']['error_description'] ?? null,
