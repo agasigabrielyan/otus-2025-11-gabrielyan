@@ -10,19 +10,15 @@ try {
     $repository = new TenantRepository();
     $repository->ensureTable();
 
-    $memberId = trim((string)($_REQUEST['member_id'] ?? ''));
-    if ($memberId === '') {
+    $auth = TenantAuth::fromRequest($_REQUEST);
+
+    if ($auth['member_id'] === '') {
         http_response_code(400);
         echo 'error: member_id is required';
         exit;
     }
 
-    $repository->save($memberId, [
-        'domain' => (string)($_REQUEST['DOMAIN'] ?? ''),
-        'auth_id' => (string)($_REQUEST['AUTH_ID'] ?? ''),
-        'refresh_id' => (string)($_REQUEST['REFRESH_ID'] ?? ''),
-        'auth_expires_at' => (int)($_REQUEST['AUTH_EXPIRES'] ?? 0) ?: null,
-    ]);
+    $repository->save($auth['member_id'], $auth);
 
     http_response_code(200);
     echo 'install ok';

@@ -9,4 +9,5 @@ define('BX_NO_ACCELERATOR_RESET', true);
 require_once $_SERVER['DOCUMENT_ROOT'] . '/bitrix/modules/main/include/prolog_before.php';
 
 require_once __DIR__ . '/AppConfig.php';
+require_once __DIR__ . '/TenantAuth.php';
 require_once __DIR__ . '/TenantRepository.php';
