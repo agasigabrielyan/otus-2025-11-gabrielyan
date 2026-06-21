@@ -60,10 +60,13 @@ final class TenantRepository
             return;
         }
 
-        $connection->update(
-            self::TABLE,
-            $fields,
-            'WHERE MEMBER_ID = \'' . $helper->forSql($memberId) . '\''
+        unset($fields['MEMBER_ID']);
+
+        [$setSql] = $helper->prepareUpdate(self::TABLE, $fields);
+        $connection->queryExecute(
+            'UPDATE ' . $helper->quote(self::TABLE)
+            . ' SET ' . $setSql
+            . ' WHERE MEMBER_ID = \'' . $helper->forSql($memberId) . '\''
         );
     }
 
