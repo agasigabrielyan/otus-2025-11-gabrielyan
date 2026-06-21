@@ -13,3 +13,4 @@ require_once __DIR__ . '/AppConfig.php';
 require_once __DIR__ . '/TenantAuth.php';
 require_once __DIR__ . '/TenantRepository.php';
 require_once __DIR__ . '/InstallLog.php';
+require_once __DIR__ . '/FrameHeaders.php';

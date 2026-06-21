@@ -9,6 +9,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'HEAD') {
 }
 
 require_once __DIR__ . '/lib/bootstrap.php';
+FrameHeaders::allowBitrix24();
 
 $status = 'Не подключено к порталу';
 $domain = '—';
