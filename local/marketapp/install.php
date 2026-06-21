@@ -25,7 +25,8 @@ try {
         'has_auth_id' => $auth['auth_id'] !== '',
     ]);
 
-    // Проверка URL из кабинета partners (GET/HEAD без параметров)
+
+    // Check URL from cabinet of partners (GET/HEAD withou parameters)
     if ($auth['member_id'] === '') {
         if ($method === 'GET' && $event !== 'ONAPPINSTALL') {
             http_response_code(200);
@@ -38,7 +39,7 @@ try {
         exit;
     }
 
-    // Не установка — открыли install.php вместо index.php, перенаправляем
+    // This is not installation — open install.php instead of index.php redirect to index.php
     if ($event !== 'ONAPPINSTALL') {
         $query = http_build_query($input);
         header('Location: index.php' . ($query !== '' ? '?' . $query : ''));

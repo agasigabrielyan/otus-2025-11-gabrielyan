@@ -24,7 +24,7 @@ final class TenantAuth
     }
 
     /**
-     * Два формата от Bitrix24:
+     * Two formats for bitrix24
      * 1) ONAPPINSTALL → auth[member_id], auth[access_token], ...
      * 2) Открытие в iframe → member_id, AUTH_ID, REFRESH_ID, DOMAIN
      */

@@ -13,6 +13,7 @@ FrameHeaders::allowBitrix24();
 
 $status = 'Не подключено к порталу';
 $domain = '—';
+$dealCount = '—';
 
 try {
     AppConfig::load();
@@ -25,10 +26,6 @@ try {
 
     if (TenantAuth::canSave($auth)) {
         $repository->save($auth['member_id'], $auth);
-        InstallLog::write('index.php saved tokens', [
-            'member_id' => $auth['member_id'],
-            'rows' => $repository->countAll(),
-        ]);
     }
 
     $memberId = $auth['member_id'];
@@ -41,6 +38,9 @@ try {
     if ($tenant !== null) {
         $domain = (string)($tenant['DOMAIN'] ?? '—');
         $status = 'Подключено';
+
+        $rest = new BitrixRest();
+        $dealCount = (string)$rest->getDealCount($tenant, $repository);
     } elseif (TenantAuth::canSave($auth)) {
         $domain = $auth['domain'] !== '' ? $auth['domain'] : '—';
         $status = 'Токены получены, проверьте таблицу';
@@ -75,7 +75,7 @@ header('Content-Type: text/html; charset=utf-8');
         <p class="label">Портал</p>
         <p class="value"><?= htmlspecialchars($domain, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
         <p class="label">Сделок в CRM</p>
-        <p class="value value_big">—</p>
+        <p class="value value_big"><?= htmlspecialchars($dealCount, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
     </div>
 </div>
 </body>
