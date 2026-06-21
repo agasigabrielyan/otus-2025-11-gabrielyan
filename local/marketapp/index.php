@@ -2,6 +2,46 @@
 
 declare(strict_types=1);
 
+require_once __DIR__ . '/lib/bootstrap.php';
+
+$status = 'Не подключено к порталу';
+$domain = '—';
+
+try {
+    AppConfig::load();
+
+    $repository = new TenantRepository();
+    $repository->ensureTable();
+
+    $input = TenantAuth::getInput();
+    $auth = TenantAuth::fromRequest($input);
+
+    if (TenantAuth::canSave($auth)) {
+        $repository->save($auth['member_id'], $auth);
+        InstallLog::write('index.php saved tokens', [
+            'member_id' => $auth['member_id'],
+            'rows' => $repository->countAll(),
+        ]);
+    }
+
+    $memberId = $auth['member_id'];
+    if ($memberId === '' && !empty($input['member_id'])) {
+        $memberId = trim((string)$input['member_id']);
+    }
+
+    $tenant = $memberId !== '' ? $repository->load($memberId) : null;
+
+    if ($tenant !== null) {
+        $domain = (string)($tenant['DOMAIN'] ?? '—');
+        $status = 'Подключено';
+    } elseif (TenantAuth::canSave($auth)) {
+        $domain = $auth['domain'] !== '' ? $auth['domain'] : '—';
+        $status = 'Токены получены, проверьте таблицу';
+    }
+} catch (Throwable $e) {
+    $status = 'Ошибка: ' . $e->getMessage();
+}
+
 header('Content-Type: text/html; charset=utf-8');
 ?>
 <!DOCTYPE html>
@@ -11,54 +51,24 @@ header('Content-Type: text/html; charset=utf-8');
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>CRM-счётчик</title>
     <style>
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            padding: 16px;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: #f5f7fa;
-            color: #333;
-        }
-        .app {
-            max-width: 480px;
-            margin: 0 auto;
-        }
-        .app__title {
-            margin: 0 0 16px;
-            font-size: 20px;
-            font-weight: 600;
-        }
-        .card {
-            background: #fff;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-        }
-        .card__label {
-            margin: 0 0 8px;
-            font-size: 13px;
-            color: #828b95;
-        }
-        .card__value {
-            margin: 0;
-            font-size: 28px;
-            font-weight: 600;
-            color: #2fc6f6;
-        }
-        .stub {
-            margin: 12px 0 0;
-            font-size: 13px;
-            color: #828b95;
-        }
+        body { margin: 0; padding: 16px; font-family: Arial, sans-serif; background: #f5f7fa; color: #333; }
+        .app { max-width: 480px; margin: 0 auto; }
+        .card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+        .label { font-size: 13px; color: #828b95; margin: 0 0 4px; }
+        .value { font-size: 18px; margin: 0 0 16px; }
+        .value_big { font-size: 28px; color: #2fc6f6; font-weight: 600; }
     </style>
 </head>
 <body>
 <div class="app">
-    <h1 class="app__title">CRM-счётчик</h1>
+    <h1>CRM-счётчик</h1>
     <div class="card">
-        <p class="card__label">Сделок в CRM</p>
-        <p class="card__value">—</p>
-        <p class="stub">Заглушка. Данные появятся после подключения REST API.</p>
+        <p class="label">Статус</p>
+        <p class="value"><?= htmlspecialchars($status, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
+        <p class="label">Портал</p>
+        <p class="value"><?= htmlspecialchars($domain, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
+        <p class="label">Сделок в CRM</p>
+        <p class="value value_big">—</p>
     </div>
 </div>
 </body>

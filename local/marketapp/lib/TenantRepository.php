@@ -43,9 +43,12 @@ final class TenantRepository
             'DOMAIN' => (string)($data['domain'] ?? ''),
             'AUTH_ID' => (string)($data['auth_id'] ?? ''),
             'REFRESH_ID' => (string)($data['refresh_id'] ?? ''),
-            'AUTH_EXPIRES_AT' => isset($data['auth_expires_at']) ? (int)$data['auth_expires_at'] : null,
             'UPDATED_AT' => $now,
         ];
+
+        if (!empty($data['auth_expires_at'])) {
+            $fields['AUTH_EXPIRES_AT'] = (int)$data['auth_expires_at'];
+        }
 
         $existing = $this->load($memberId);
 
@@ -59,7 +62,7 @@ final class TenantRepository
         $connection->update(
             self::TABLE,
             $fields,
-            'WHERE MEMBER_ID = ' . $helper->forSql($memberId)
+            'WHERE MEMBER_ID = \'' . $helper->forSql($memberId) . '\''
         );
     }
 
@@ -77,5 +80,14 @@ final class TenantRepository
         $row = $result->fetch();
 
         return is_array($row) ? $row : null;
+    }
+
+    public function countAll(): int
+    {
+        $connection = Application::getConnection();
+        $result = $connection->query('SELECT COUNT(*) AS CNT FROM ' . self::TABLE);
+        $row = $result->fetch();
+
+        return (int)($row['CNT'] ?? 0);
     }
 }

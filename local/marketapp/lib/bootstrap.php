@@ -11,3 +11,4 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/bitrix/modules/main/include/prolog_be
 require_once __DIR__ . '/AppConfig.php';
 require_once __DIR__ . '/TenantAuth.php';
 require_once __DIR__ . '/TenantRepository.php';
+require_once __DIR__ . '/InstallLog.php';
