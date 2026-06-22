@@ -12,6 +12,8 @@ require_once __DIR__ . '/lib/bootstrap.php';
 $status = 'Не подключено';
 $domain = '—';
 $memberId = '—';
+$botId = '—';
+$botStatus = '';
 $error = '';
 
 try {
@@ -39,6 +41,23 @@ try {
         $status = 'Подключено к порталу';
         $domain = (string)($tenant['DOMAIN'] ?? '—');
         $memberId = (string)($tenant['MEMBER_ID'] ?? '—');
+        $botId = (string)($tenant['BOT_ID'] ?? '');
+
+        $tenantForRest = [
+            'MEMBER_ID' => $currentMemberId,
+            'DOMAIN' => (string)($auth['domain'] ?: $tenant['DOMAIN']),
+            'AUTH_ID' => (string)($auth['auth_id'] ?: $tenant['AUTH_ID']),
+            'REFRESH_ID' => (string)($auth['refresh_id'] ?: $tenant['REFRESH_ID']),
+            'BOT_ID' => (int)($tenant['BOT_ID'] ?? 0),
+        ];
+
+        if ((int)($tenant['BOT_ID'] ?? 0) <= 0) {
+            $registeredId = (new BotInstaller())->install($tenantForRest, $repository);
+            $botId = (string)$registeredId;
+            $botStatus = 'Чат-бот зарегистрирован. Откройте Мессенджер → найдите бота в списке чатов.';
+        } else {
+            $botStatus = 'Чат-бот уже зарегистрирован.';
+        }
     }
 } catch (Throwable $e) {
     $error = $e->getMessage();
@@ -53,7 +72,7 @@ header('Content-Type: text/html; charset=utf-8');
     <title>CRM-статистика</title>
     <style>
         body { font-family: sans-serif; margin: 24px; color: #333; }
-        .card { border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; max-width: 480px; }
+        .card { border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; max-width: 520px; }
         .ok { color: #2e7d32; }
         .err { color: #c62828; }
     </style>
@@ -64,7 +83,10 @@ header('Content-Type: text/html; charset=utf-8');
     <p>Статус: <strong class="<?= $error === '' ? 'ok' : 'err' ?>"><?= htmlspecialchars($error !== '' ? $error : $status, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></strong></p>
     <p>Портал: <?= htmlspecialchars($domain, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
     <p>member_id: <?= htmlspecialchars($memberId, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
+    <p>BOT_ID: <?= htmlspecialchars($botId !== '' ? $botId : '—', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
+    <?php if ($botStatus !== '' && $error === ''): ?>
+        <p class="ok"><?= htmlspecialchars($botStatus, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
+    <?php endif; ?>
 </div>
-<p>Чат-бот подключим на следующем шаге.</p>
 </body>
 </html>

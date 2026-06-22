@@ -16,10 +16,10 @@ try {
     echo "rows: " . $repository->countAll() . "\n";
 
     $db = Database::connection();
-    $result = $db->query('SELECT MEMBER_ID, DOMAIN, UPDATED_AT FROM otus_marketbot_tenant LIMIT 5');
+    $result = $db->query('SELECT MEMBER_ID, DOMAIN, BOT_ID, UPDATED_AT FROM otus_marketbot_tenant LIMIT 5');
     if ($result) {
         while ($row = $result->fetch_assoc()) {
-            echo 'tenant: ' . ($row['MEMBER_ID'] ?? '') . ' @ ' . ($row['DOMAIN'] ?? '') . ' (' . ($row['UPDATED_AT'] ?? '') . ")\n";
+            echo 'tenant: ' . ($row['MEMBER_ID'] ?? '') . ' @ ' . ($row['DOMAIN'] ?? '') . ' bot=' . ($row['BOT_ID'] ?? '') . ' (' . ($row['UPDATED_AT'] ?? '') . ")\n";
         }
     }
 } catch (Throwable $e) {

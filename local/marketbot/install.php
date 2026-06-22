@@ -46,6 +46,24 @@ try {
     $repository->ensureTable();
     $repository->save($auth['member_id'], $auth);
 
+    $tenant = $repository->load($auth['member_id']);
+    $botError = '';
+
+    if ($tenant !== null) {
+        try {
+            $tenantForRest = [
+                'MEMBER_ID' => $auth['member_id'],
+                'DOMAIN' => (string)($tenant['DOMAIN'] ?? $auth['domain']),
+                'AUTH_ID' => (string)($tenant['AUTH_ID'] ?? $auth['auth_id']),
+                'REFRESH_ID' => (string)($tenant['REFRESH_ID'] ?? $auth['refresh_id']),
+                'BOT_ID' => (int)($tenant['BOT_ID'] ?? 0),
+            ];
+            (new BotInstaller())->install($tenantForRest, $repository);
+        } catch (Throwable $e) {
+            $botError = $e->getMessage();
+        }
+    }
+
     http_response_code(200);
     header('Content-Type: text/html; charset=utf-8');
     ?>
@@ -57,7 +75,7 @@ try {
         <script src="https://api.bitrix24.com/api/v1/"></script>
     </head>
     <body>
-    <p>Установка завершена. Токены сохранены.</p>
+    <p>Установка завершена. Токены сохранены.<?= $botError !== '' ? ' Бот: ' . htmlspecialchars($botError, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '' ?></p>
     <script>
         BX24.init(function () {
             BX24.installFinish();

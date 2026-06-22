@@ -12,27 +12,33 @@ final class TenantRepository
         $table = self::TABLE;
 
         $result = $db->query("SHOW TABLES LIKE '{$table}'");
-        if ($result !== false && $result->num_rows > 0) {
+        if ($result === false || $result->num_rows === 0) {
+            $db->query(
+                "CREATE TABLE {$table} (
+                    ID INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                    MEMBER_ID VARCHAR(64) NOT NULL,
+                    DOMAIN VARCHAR(255) NOT NULL,
+                    AUTH_ID VARCHAR(512) NOT NULL,
+                    REFRESH_ID VARCHAR(512) NOT NULL,
+                    AUTH_EXPIRES_AT INT UNSIGNED NULL,
+                    BOT_ID INT UNSIGNED NULL,
+                    INSTALLED_AT DATETIME NOT NULL,
+                    UPDATED_AT DATETIME NOT NULL,
+                    PRIMARY KEY (ID),
+                    UNIQUE KEY UX_MEMBER_ID (MEMBER_ID)
+                )"
+            );
+
+            if ($db->error) {
+                throw new RuntimeException('Не удалось создать таблицу: ' . $db->error);
+            }
+
             return;
         }
 
-        $db->query(
-            "CREATE TABLE {$table} (
-                ID INT UNSIGNED NOT NULL AUTO_INCREMENT,
-                MEMBER_ID VARCHAR(64) NOT NULL,
-                DOMAIN VARCHAR(255) NOT NULL,
-                AUTH_ID VARCHAR(512) NOT NULL,
-                REFRESH_ID VARCHAR(512) NOT NULL,
-                AUTH_EXPIRES_AT INT UNSIGNED NULL,
-                INSTALLED_AT DATETIME NOT NULL,
-                UPDATED_AT DATETIME NOT NULL,
-                PRIMARY KEY (ID),
-                UNIQUE KEY UX_MEMBER_ID (MEMBER_ID)
-            )"
-        );
-
-        if ($db->error) {
-            throw new RuntimeException('Не удалось создать таблицу: ' . $db->error);
+        $column = $db->query("SHOW COLUMNS FROM {$table} LIKE 'BOT_ID'");
+        if ($column !== false && $column->num_rows === 0) {
+            $db->query("ALTER TABLE {$table} ADD COLUMN BOT_ID INT UNSIGNED NULL AFTER AUTH_EXPIRES_AT");
         }
     }
 
@@ -109,5 +115,19 @@ final class TenantRepository
         $row = $result ? $result->fetch_assoc() : null;
 
         return (int)($row['CNT'] ?? 0);
+    }
+
+    public function saveBotId(string $memberId, int $botId): void
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE ' . self::TABLE . ' SET BOT_ID = ?, UPDATED_AT = ? WHERE MEMBER_ID = ?'
+        );
+        $now = date('Y-m-d H:i:s');
+        $stmt->bind_param('iss', $botId, $now, $memberId);
+        $stmt->execute();
+
+        if ($stmt->error) {
+            throw new RuntimeException('Не удалось сохранить BOT_ID: ' . $stmt->error);
+        }
     }
 }
