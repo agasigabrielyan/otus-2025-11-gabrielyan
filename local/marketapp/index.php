@@ -14,6 +14,7 @@ FrameHeaders::allowBitrix24();
 $status = 'Не подключено к порталу';
 $domain = '—';
 $dealCount = '—';
+$widgetStatus = '';
 
 try {
     AppConfig::load();
@@ -39,8 +40,33 @@ try {
         $domain = (string)($tenant['DOMAIN'] ?? '—');
         $status = 'Подключено';
 
+        $tenantForRest = [
+            'MEMBER_ID' => $memberId,
+            'DOMAIN' => (string)($auth['domain'] ?: $tenant['DOMAIN']),
+            'AUTH_ID' => (string)($auth['auth_id'] ?: $tenant['AUTH_ID']),
+            'REFRESH_ID' => (string)($auth['refresh_id'] ?: $tenant['REFRESH_ID']),
+        ];
+
         $rest = new BitrixRest();
-        $dealCount = (string)$rest->getDealCount($tenant, $repository);
+        $registered = $rest->callRaw($tenantForRest, 'placement.get', [], $repository);
+
+        if (empty($registered['result'])) {
+            try {
+                (new PlacementInstaller())->install($tenantForRest, $repository);
+                $widgetStatus = 'Виджет зарегистрирован. Откройте CRM → Сделки или карточку сделки.';
+                InstallLog::write('index.php auto placement bound', ['member_id' => $memberId]);
+            } catch (Throwable $widgetError) {
+                $widgetStatus = 'Виджет не зарегистрирован: ' . $widgetError->getMessage();
+                InstallLog::write('index.php auto placement failed', [
+                    'member_id' => $memberId,
+                    'message' => $widgetError->getMessage(),
+                ]);
+            }
+        } else {
+            $widgetStatus = 'Виджет уже зарегистрирован';
+        }
+
+        $dealCount = (string)$rest->getDealCount($tenantForRest, $repository);
     } elseif (TenantAuth::canSave($auth)) {
         $domain = $auth['domain'] !== '' ? $auth['domain'] : '—';
         $status = 'Токены получены, проверьте таблицу';
@@ -76,6 +102,10 @@ header('Content-Type: text/html; charset=utf-8');
         <p class="value"><?= htmlspecialchars($domain, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
         <p class="label">Сделок в CRM</p>
         <p class="value value_big"><?= htmlspecialchars($dealCount, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
+        <?php if ($widgetStatus !== ''): ?>
+            <p class="label">Виджет</p>
+            <p class="value" style="font-size:14px;"><?= htmlspecialchars($widgetStatus, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
+        <?php endif; ?>
         <?php if ($status === 'Подключено'): ?>
             <p style="margin-top:16px;font-size:13px;">
                 <a href="rebind.php">Зарегистрировать виджет в CRM</a><br>
