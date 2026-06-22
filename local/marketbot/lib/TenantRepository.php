@@ -160,4 +160,14 @@ final class TenantRepository
             throw new RuntimeException('Не удалось сохранить BOT_ID: ' . $stmt->error);
         }
     }
+
+    public function clearBotId(string $memberId): void
+    {
+        $stmt = Database::connection()->prepare(
+            'UPDATE ' . self::TABLE . ' SET BOT_ID = NULL, UPDATED_AT = ? WHERE MEMBER_ID = ?'
+        );
+        $now = date('Y-m-d H:i:s');
+        $stmt->bind_param('ss', $now, $memberId);
+        $stmt->execute();
+    }
 }
