@@ -56,6 +56,18 @@ try {
     $repository->ensureTable();
     $repository->save($auth['member_id'], $auth);
 
+    $tenant = $repository->load($auth['member_id']);
+    if ($tenant !== null) {
+        try {
+            (new PlacementInstaller())->install($tenant, $repository);
+            InstallLog::write('install.php placement bound', ['placement' => 'CRM_DEAL_LIST_TOOLBAR']);
+        } catch (Throwable $placementError) {
+            InstallLog::write('install.php placement bind failed', [
+                'message' => $placementError->getMessage(),
+            ]);
+        }
+    }
+
     InstallLog::write('install.php saved', [
         'member_id' => $auth['member_id'],
         'rows' => $repository->countAll(),

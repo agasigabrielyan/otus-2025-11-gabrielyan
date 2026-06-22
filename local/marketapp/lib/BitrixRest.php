@@ -4,6 +4,20 @@ declare(strict_types=1);
 
 final class BitrixRest
 {
+    public function bindPlacement(
+        array $tenant,
+        TenantRepository $repository,
+        string $placement,
+        string $handler,
+        string $title
+    ): void {
+        $this->call($tenant, 'placement.bind', [
+            'PLACEMENT' => $placement,
+            'HANDLER' => $handler,
+            'TITLE' => $title,
+        ], $repository);
+    }
+
     public function getDealCount(array $tenant, TenantRepository $repository): int
     {
         $response = $this->call($tenant, 'crm.deal.list', [
