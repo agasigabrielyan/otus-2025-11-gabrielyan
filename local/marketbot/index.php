@@ -14,10 +14,12 @@ $domain = '—';
 $memberId = '—';
 $botId = '—';
 $botStatus = '';
+$chatHint = '';
 $error = '';
 
 try {
     AppConfig::load();
+    $config = AppConfig::load();
 
     $repository = new TenantRepository();
     $repository->ensureTable();
@@ -54,9 +56,24 @@ try {
         if ((int)($tenant['BOT_ID'] ?? 0) <= 0) {
             $registeredId = (new BotInstaller())->install($tenantForRest, $repository);
             $botId = (string)$registeredId;
-            $botStatus = 'Чат-бот зарегистрирован. Откройте Мессенджер → найдите бота в списке чатов.';
+            $tenantForRest['BOT_ID'] = $registeredId;
+            $botStatus = 'Чат-бот зарегистрирован.';
         } else {
             $botStatus = 'Чат-бот уже зарегистрирован.';
+        }
+
+        if (!empty($_GET['start_chat']) && (int)$botId > 0) {
+            $messenger = new BotMessenger();
+            $userId = $messenger->getCurrentUserId($tenantForRest, $repository);
+            $messenger->sendToUser(
+                $tenantForRest,
+                $repository,
+                $userId,
+                "Привет! Я бот «{$config['bot_name']}».\nНапишите /stats — покажу количество сделок.\n/help — список команд."
+            );
+            $chatHint = 'Первое сообщение отправлено. Откройте Мессенджер → Чаты — бот должен появиться в списке.';
+        } else {
+            $chatHint = 'Если не видите чат: нажмите кнопку ниже или найдите бота через поиск в мессенджере.';
         }
     }
 } catch (Throwable $e) {
@@ -75,6 +92,8 @@ header('Content-Type: text/html; charset=utf-8');
         .card { border: 1px solid #e0e0e0; border-radius: 8px; padding: 16px; max-width: 520px; }
         .ok { color: #2e7d32; }
         .err { color: #c62828; }
+        .btn { display: inline-block; margin-top: 12px; padding: 10px 16px; background: #2fc6f6; color: #fff; text-decoration: none; border-radius: 6px; }
+        .hint { margin-top: 12px; color: #666; font-size: 14px; line-height: 1.5; }
     </style>
 </head>
 <body>
@@ -82,10 +101,14 @@ header('Content-Type: text/html; charset=utf-8');
 <div class="card">
     <p>Статус: <strong class="<?= $error === '' ? 'ok' : 'err' ?>"><?= htmlspecialchars($error !== '' ? $error : $status, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></strong></p>
     <p>Портал: <?= htmlspecialchars($domain, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
-    <p>member_id: <?= htmlspecialchars($memberId, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
     <p>BOT_ID: <?= htmlspecialchars($botId !== '' ? $botId : '—', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
     <?php if ($botStatus !== '' && $error === ''): ?>
         <p class="ok"><?= htmlspecialchars($botStatus, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
+    <?php endif; ?>
+    <?php if ($error === '' && (int)$botId > 0): ?>
+        <a class="btn" href="?start_chat=1">Написать боту</a>
+        <p class="hint"><?= htmlspecialchars($chatHint, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
+        <p class="hint">Или вручную: <strong>Мессенджер → Чаты → поиск</strong> → введите <strong><?= htmlspecialchars($config['bot_name'] ?? 'CRM-статистика', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></strong></p>
     <?php endif; ?>
 </div>
 </body>

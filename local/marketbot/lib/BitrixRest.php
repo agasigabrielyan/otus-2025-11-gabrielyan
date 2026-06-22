@@ -4,6 +4,20 @@ declare(strict_types=1);
 
 final class BitrixRest
 {
+    public function getDealCount(array $tenant, TenantRepository $repository): int
+    {
+        $response = $this->call($tenant, 'crm.deal.list', [
+            'select' => ['ID'],
+            'order' => ['ID' => 'DESC'],
+        ], $repository);
+
+        if (isset($response['total'])) {
+            return (int)$response['total'];
+        }
+
+        return count($response['result'] ?? []);
+    }
+
     public function callRaw(
         array $tenant,
         string $method,
