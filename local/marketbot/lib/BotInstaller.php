@@ -63,6 +63,9 @@ final class BotInstaller
             'CLIENT_ID' => $config['client_id'],
             'FIELDS' => [
                 'EVENT_HANDLER' => $handlerUrl,
+                'EVENT_MESSAGE_ADD' => $handlerUrl,
+                'EVENT_WELCOME_MESSAGE' => $handlerUrl,
+                'EVENT_BOT_DELETE' => $handlerUrl,
             ],
         ], $repository);
 

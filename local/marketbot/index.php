@@ -38,6 +38,12 @@ try {
     }
 
     $tenant = $currentMemberId !== '' ? $repository->load($currentMemberId) : null;
+    if ($tenant === null && $repository->countAll() === 1) {
+        $tenant = loadSingleTenant($repository);
+        if ($tenant !== null) {
+            $currentMemberId = (string)$tenant['MEMBER_ID'];
+        }
+    }
 
     if ($tenant !== null) {
         $status = 'Подключено к порталу';
@@ -86,6 +92,10 @@ try {
     $error = $e->getMessage();
 }
 
+$startChatQuery = $_GET;
+$startChatQuery['start_chat'] = '1';
+$startChatUrl = 'index.php?' . http_build_query($startChatQuery);
+
 header('Content-Type: text/html; charset=utf-8');
 ?>
 <!DOCTYPE html>
@@ -112,7 +122,7 @@ header('Content-Type: text/html; charset=utf-8');
         <p class="ok"><?= htmlspecialchars($botStatus, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
     <?php endif; ?>
     <?php if ($error === '' && (int)$botId > 0): ?>
-        <a class="btn" href="?start_chat=1">Написать боту</a>
+        <a class="btn" href="<?= htmlspecialchars($startChatUrl, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?>">Написать боту</a>
         <p class="hint"><?= htmlspecialchars($chatHint, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
         <p class="hint">Или вручную: <strong>Мессенджер → Чаты → поиск</strong> → введите <strong><?= htmlspecialchars($config['bot_name'] ?? 'CRM-статистика', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></strong></p>
     <?php endif; ?>

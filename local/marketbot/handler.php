@@ -12,6 +12,9 @@ require_once __DIR__ . '/lib/bootstrap.php';
 header('Content-Type: text/plain; charset=utf-8');
 
 try {
+    AppConfig::load();
+    $config = AppConfig::load();
+
     $repository = new TenantRepository();
     $repository->ensureTable();
 
@@ -19,6 +22,7 @@ try {
     HandlerLog::write('handler called', [
         'method' => $_SERVER['REQUEST_METHOD'] ?? 'GET',
         'event' => $input['event'] ?? null,
+        'keys' => array_keys($input),
     ]);
 
     $auth = resolveEventAuth($input);
@@ -26,17 +30,9 @@ try {
         $repository->save($auth['member_id'], $auth);
     }
 
-    $memberId = resolveMemberId($input, $auth);
-    if ($memberId === '') {
-        HandlerLog::write('skip', ['reason' => 'no member_id']);
-        http_response_code(200);
-        echo 'skip: no member_id';
-        exit;
-    }
-
-    $tenant = $repository->load($memberId);
+    $tenant = resolveTenant($repository, $input, $auth);
     if ($tenant === null) {
-        HandlerLog::write('skip', ['reason' => 'tenant not found', 'member_id' => $memberId]);
+        HandlerLog::write('skip', ['reason' => 'tenant not found']);
         http_response_code(200);
         echo 'skip: tenant not found';
         exit;
@@ -59,20 +55,14 @@ try {
         exit;
     }
 
-    $restTenant = [
-        'MEMBER_ID' => (string)$tenant['MEMBER_ID'],
-        'DOMAIN' => (string)($auth['domain'] ?: $tenant['DOMAIN']),
-        'AUTH_ID' => (string)($auth['auth_id'] ?: $tenant['AUTH_ID']),
-        'REFRESH_ID' => (string)($auth['refresh_id'] ?: $tenant['REFRESH_ID']),
-        'BOT_ID' => $botId,
-    ];
-
+    $restTenant = buildRestTenant($input, $tenant, $auth, $botId);
     $reply = buildReplyText($text, $restTenant, $repository);
 
     $response = (new BitrixRest())->callRaw($restTenant, 'imbot.message.add', [
         'BOT_ID' => $botId,
         'DIALOG_ID' => $dialogId,
         'MESSAGE' => $reply,
+        'CLIENT_ID' => $config['client_id'],
     ], $repository);
 
     if (!empty($response['error'])) {
@@ -112,7 +102,7 @@ function resolveEventAuth(array $input): array
             continue;
         }
 
-        $botAuth = TenantAuth::fromRequest(['auth' => $bot['AUTH']]);
+        $botAuth = TenantAuth::fromRequest($bot['AUTH']);
         if (TenantAuth::canSave($botAuth)) {
             return $botAuth;
         }
@@ -121,24 +111,45 @@ function resolveEventAuth(array $input): array
     return $auth;
 }
 
-function resolveMemberId(array $input, array $auth): string
+function resolveTenant(TenantRepository $repository, array $input, array $auth): ?array
 {
-    if (!empty($auth['member_id'])) {
-        return (string)$auth['member_id'];
+    $memberId = trim((string)($auth['member_id'] ?? ''));
+    if ($memberId !== '') {
+        $tenant = $repository->load($memberId);
+        if ($tenant !== null) {
+            return $tenant;
+        }
     }
 
-    $value = readByPaths($input, [
-        ['auth', 'member_id'],
-        ['member_id'],
-    ]);
+    $domain = trim((string)($auth['domain'] ?? ''));
+    if ($domain !== '') {
+        $tenant = $repository->loadByDomain($domain);
+        if ($tenant !== null) {
+            return $tenant;
+        }
+    }
 
-    return is_scalar($value) ? trim((string)$value) : '';
+    return $repository->loadSingle();
+}
+
+function buildRestTenant(array $input, array $tenant, array $auth, int $botId): array
+{
+    $eventAuth = resolveEventAuth($input);
+
+    return [
+        'MEMBER_ID' => (string)$tenant['MEMBER_ID'],
+        'DOMAIN' => (string)($eventAuth['domain'] ?: $auth['domain'] ?: $tenant['DOMAIN']),
+        'AUTH_ID' => (string)($eventAuth['auth_id'] ?: $auth['auth_id'] ?: $tenant['AUTH_ID']),
+        'REFRESH_ID' => (string)($eventAuth['refresh_id'] ?: $auth['refresh_id'] ?: $tenant['REFRESH_ID']),
+        'BOT_ID' => $botId,
+    ];
 }
 
 function resolveBotId(array $input, array $tenant): int
 {
     $fromEvent = readByPaths($input, [
         ['data', 'PARAMS', 'BOT_ID'],
+        ['data', 'PARAMS', 'bot_id'],
         ['data', 'BOT_ID'],
     ]);
 
@@ -162,7 +173,9 @@ function resolveDialogId(array $input): string
 {
     $value = readByPaths($input, [
         ['data', 'PARAMS', 'DIALOG_ID'],
+        ['data', 'PARAMS', 'dialog_id'],
         ['data', 'PARAMS', 'FROM_USER_ID'],
+        ['data', 'PARAMS', 'from_user_id'],
         ['data', 'PARAMS', 'USER_ID'],
         ['DIALOG_ID'],
     ]);
@@ -178,6 +191,7 @@ function resolveMessageText(array $input): string
 {
     $value = readByPaths($input, [
         ['data', 'PARAMS', 'MESSAGE'],
+        ['data', 'PARAMS', 'message'],
         ['data', 'PARAMS', 'MESSAGE_ORIGINAL'],
         ['data', 'PARAMS', 'MESSAGE_TEXT'],
         ['MESSAGE'],

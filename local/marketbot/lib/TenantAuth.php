@@ -33,7 +33,17 @@ final class TenantAuth
                 'domain' => (string)($auth['domain'] ?? ''),
                 'auth_id' => (string)($auth['access_token'] ?? ''),
                 'refresh_id' => (string)($auth['refresh_token'] ?? ''),
-                'auth_expires_at' => self::resolveExpiresAt($auth['expires_in'] ?? null),
+                'auth_expires_at' => self::resolveExpiresAt($auth['expires_in'] ?? $auth['expires'] ?? null),
+            ];
+        }
+
+        if (isset($request['access_token'])) {
+            return [
+                'member_id' => trim((string)($request['member_id'] ?? '')),
+                'domain' => (string)($request['domain'] ?? ''),
+                'auth_id' => (string)($request['access_token'] ?? ''),
+                'refresh_id' => (string)($request['refresh_token'] ?? ''),
+                'auth_expires_at' => self::resolveExpiresAt($request['expires_in'] ?? $request['expires'] ?? null),
             ];
         }
 

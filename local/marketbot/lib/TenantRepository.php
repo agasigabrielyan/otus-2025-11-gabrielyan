@@ -109,6 +109,36 @@ final class TenantRepository
         return is_array($row) ? $row : null;
     }
 
+    public function loadByDomain(string $domain): ?array
+    {
+        $domain = trim($domain);
+        if ($domain === '') {
+            return null;
+        }
+
+        $stmt = Database::connection()->prepare(
+            'SELECT * FROM ' . self::TABLE . ' WHERE DOMAIN = ? LIMIT 1'
+        );
+        $stmt->bind_param('s', $domain);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+
+        return is_array($row) ? $row : null;
+    }
+
+    public function loadSingle(): ?array
+    {
+        if ($this->countAll() !== 1) {
+            return null;
+        }
+
+        $result = Database::connection()->query('SELECT * FROM ' . self::TABLE . ' LIMIT 1');
+        $row = $result ? $result->fetch_assoc() : null;
+
+        return is_array($row) ? $row : null;
+    }
+
     public function countAll(): int
     {
         $result = Database::connection()->query('SELECT COUNT(*) AS CNT FROM ' . self::TABLE);
