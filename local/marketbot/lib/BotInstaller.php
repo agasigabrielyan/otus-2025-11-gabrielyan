@@ -47,7 +47,7 @@ final class BotInstaller
         return $botId;
     }
 
-    public function updateHandler(array $tenant, TenantRepository $repository): void
+    public function updateHandler(array $tenant, TenantRepository $repository, ?string $handlerUrl = null): void
     {
         $botId = (int)($tenant['BOT_ID'] ?? 0);
         if ($botId <= 0) {
@@ -55,7 +55,7 @@ final class BotInstaller
         }
 
         $config = AppConfig::load();
-        $handlerUrl = $config['handler_url'];
+        $handlerUrl = $handlerUrl ?? $config['handler_url'];
         if ($handlerUrl === '') {
             throw new RuntimeException('В config.php укажите handler_url.');
         }
@@ -76,6 +76,6 @@ final class BotInstaller
             throw new RuntimeException('imbot.update: ' . $description);
         }
 
-        (new EventBinder())->bindBotEvents($tenant, $repository);
+        (new EventBinder())->bindBotEvents($tenant, $repository, $handlerUrl);
     }
 }

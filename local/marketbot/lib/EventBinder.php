@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 final class EventBinder
 {
-    public function bindBotEvents(array $tenant, TenantRepository $repository): void
+    public function bindBotEvents(array $tenant, TenantRepository $repository, ?string $handlerUrl = null): void
     {
-        $handlerUrl = $this->getHandlerUrl();
+        $handlerUrl = $handlerUrl ?? $this->getHandlerUrl();
         $this->rebindEvent($tenant, $repository, 'ONIMBOTMESSAGEADD', $handlerUrl);
         $this->rebindEvent($tenant, $repository, 'ONIMBOTJOINCHAT', $handlerUrl);
     }
