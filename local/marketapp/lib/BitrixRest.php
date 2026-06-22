@@ -4,6 +4,20 @@ declare(strict_types=1);
 
 final class BitrixRest
 {
+    public function getPlacements(array $tenant, TenantRepository $repository): array
+    {
+        $response = $this->call($tenant, 'placement.get', [], $repository);
+
+        return $response['result'] ?? [];
+    }
+
+    public function listAvailablePlacements(array $tenant, TenantRepository $repository): array
+    {
+        $response = $this->call($tenant, 'placement.list', [], $repository);
+
+        return $response['result'] ?? [];
+    }
+
     public function bindPlacement(
         array $tenant,
         TenantRepository $repository,

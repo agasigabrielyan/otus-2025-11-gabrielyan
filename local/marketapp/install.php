@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
-// Bitrix24 проверяет URL запросом HEAD (ждёт код 200)
 if ($method === 'HEAD') {
     http_response_code(200);
     exit;
@@ -25,8 +24,6 @@ try {
         'has_auth_id' => $auth['auth_id'] !== '',
     ]);
 
-
-    // Check URL from cabinet of partners (GET/HEAD withou parameters)
     if ($auth['member_id'] === '') {
         if ($method === 'GET' && $event !== 'ONAPPINSTALL') {
             http_response_code(200);
@@ -39,7 +36,6 @@ try {
         exit;
     }
 
-    // This is not installation — open install.php instead of index.php redirect to index.php
     if ($event !== 'ONAPPINSTALL') {
         $query = http_build_query($input);
         header('Location: index.php' . ($query !== '' ? '?' . $query : ''));
@@ -57,13 +53,22 @@ try {
     $repository->save($auth['member_id'], $auth);
 
     $tenant = $repository->load($auth['member_id']);
+    $placementError = '';
+
     if ($tenant !== null) {
+        InstallLog::write('install.php placement step start', [
+            'member_id' => $auth['member_id'],
+        ]);
+
         try {
             (new PlacementInstaller())->install($tenant, $repository);
-            InstallLog::write('install.php placement bound', ['placement' => 'CRM_DEAL_LIST_TOOLBAR']);
-        } catch (Throwable $placementError) {
+            InstallLog::write('install.php placement bound', [
+                'placements' => ['CRM_DEAL_LIST_TOOLBAR', 'CRM_DEAL_DETAIL_TAB'],
+            ]);
+        } catch (Throwable $e) {
+            $placementError = $e->getMessage();
             InstallLog::write('install.php placement bind failed', [
-                'message' => $placementError->getMessage(),
+                'message' => $placementError,
             ]);
         }
     }
@@ -74,7 +79,25 @@ try {
     ]);
 
     http_response_code(200);
-    echo 'install ok';
+    header('Content-Type: text/html; charset=utf-8');
+    ?>
+    <!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="utf-8">
+        <title>Установка</title>
+        <script src="https://api.bitrix24.com/api/v1/"></script>
+    </head>
+    <body>
+    <p>Установка завершена<?= $placementError !== '' ? '. Виджет: ' . htmlspecialchars($placementError, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : '' ?>.</p>
+    <script>
+        BX24.init(function () {
+            BX24.installFinish();
+        });
+    </script>
+    </body>
+    </html>
+    <?php
 } catch (Throwable $e) {
     InstallLog::write('install.php error', ['message' => $e->getMessage()]);
     http_response_code(500);
