@@ -44,4 +44,31 @@ final class BotInstaller
 
         return $botId;
     }
+
+    public function updateHandler(array $tenant, TenantRepository $repository): void
+    {
+        $botId = (int)($tenant['BOT_ID'] ?? 0);
+        if ($botId <= 0) {
+            throw new RuntimeException('BOT_ID не найден.');
+        }
+
+        $config = AppConfig::load();
+        $handlerUrl = $config['handler_url'];
+        if ($handlerUrl === '') {
+            throw new RuntimeException('В config.php укажите handler_url.');
+        }
+
+        $response = (new BitrixRest())->callRaw($tenant, 'imbot.update', [
+            'BOT_ID' => $botId,
+            'CLIENT_ID' => $config['client_id'],
+            'FIELDS' => [
+                'EVENT_HANDLER' => $handlerUrl,
+            ],
+        ], $repository);
+
+        if (!empty($response['error'])) {
+            $description = (string)($response['error_description'] ?? $response['error']);
+            throw new RuntimeException('imbot.update: ' . $description);
+        }
+    }
 }

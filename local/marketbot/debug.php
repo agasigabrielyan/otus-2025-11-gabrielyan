@@ -22,6 +22,16 @@ try {
             echo 'tenant: ' . ($row['MEMBER_ID'] ?? '') . ' @ ' . ($row['DOMAIN'] ?? '') . ' bot=' . ($row['BOT_ID'] ?? '') . ' (' . ($row['UPDATED_AT'] ?? '') . ")\n";
         }
     }
+
+    $logPath = dirname(__DIR__) . '/data/handler.log';
+    echo "\nhandler.log:\n";
+    if (is_file($logPath)) {
+        $lines = file($logPath, FILE_IGNORE_NEW_LINES);
+        $tail = array_slice($lines ?: [], -10);
+        echo $tail === [] ? "(empty)\n" : implode("\n", $tail) . "\n";
+    } else {
+        echo "(no log yet)\n";
+    }
 } catch (Throwable $e) {
     http_response_code(500);
     echo 'error: ' . $e->getMessage();

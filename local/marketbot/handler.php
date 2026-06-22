@@ -16,13 +16,19 @@ try {
     $repository->ensureTable();
 
     $input = TenantAuth::getInput();
-    $auth = TenantAuth::fromRequest($input);
+    HandlerLog::write('handler called', [
+        'method' => $_SERVER['REQUEST_METHOD'] ?? 'GET',
+        'event' => $input['event'] ?? null,
+    ]);
+
+    $auth = resolveEventAuth($input);
     if (TenantAuth::canSave($auth)) {
         $repository->save($auth['member_id'], $auth);
     }
 
     $memberId = resolveMemberId($input, $auth);
     if ($memberId === '') {
+        HandlerLog::write('skip', ['reason' => 'no member_id']);
         http_response_code(200);
         echo 'skip: no member_id';
         exit;
@@ -30,6 +36,7 @@ try {
 
     $tenant = $repository->load($memberId);
     if ($tenant === null) {
+        HandlerLog::write('skip', ['reason' => 'tenant not found', 'member_id' => $memberId]);
         http_response_code(200);
         echo 'skip: tenant not found';
         exit;
@@ -37,14 +44,16 @@ try {
 
     $dialogId = resolveDialogId($input);
     if ($dialogId === '') {
+        HandlerLog::write('skip', ['reason' => 'no dialog_id']);
         http_response_code(200);
         echo 'skip: no dialog_id';
         exit;
     }
 
     $text = trim(resolveMessageText($input));
-    $botId = (int)($tenant['BOT_ID'] ?? 0);
+    $botId = resolveBotId($input, $tenant);
     if ($botId <= 0) {
+        HandlerLog::write('skip', ['reason' => 'no bot_id']);
         http_response_code(200);
         echo 'skip: bot not registered';
         exit;
@@ -52,25 +61,64 @@ try {
 
     $restTenant = [
         'MEMBER_ID' => (string)$tenant['MEMBER_ID'],
-        'DOMAIN' => (string)$tenant['DOMAIN'],
-        'AUTH_ID' => (string)$tenant['AUTH_ID'],
-        'REFRESH_ID' => (string)$tenant['REFRESH_ID'],
+        'DOMAIN' => (string)($auth['domain'] ?: $tenant['DOMAIN']),
+        'AUTH_ID' => (string)($auth['auth_id'] ?: $tenant['AUTH_ID']),
+        'REFRESH_ID' => (string)($auth['refresh_id'] ?: $tenant['REFRESH_ID']),
         'BOT_ID' => $botId,
     ];
 
     $reply = buildReplyText($text, $restTenant, $repository);
 
-    (new BitrixRest())->callRaw($restTenant, 'imbot.message.add', [
+    $response = (new BitrixRest())->callRaw($restTenant, 'imbot.message.add', [
         'BOT_ID' => $botId,
         'DIALOG_ID' => $dialogId,
         'MESSAGE' => $reply,
     ], $repository);
 
+    if (!empty($response['error'])) {
+        $description = (string)($response['error_description'] ?? $response['error']);
+        HandlerLog::write('reply failed', ['error' => $description]);
+        throw new RuntimeException($description);
+    }
+
+    HandlerLog::write('reply sent', [
+        'dialog_id' => $dialogId,
+        'text' => $text,
+        'reply' => $reply,
+    ]);
+
     http_response_code(200);
     echo 'ok';
 } catch (Throwable $e) {
+    HandlerLog::write('error', ['message' => $e->getMessage()]);
     http_response_code(500);
     echo 'error: ' . $e->getMessage();
+}
+
+function resolveEventAuth(array $input): array
+{
+    $auth = TenantAuth::fromRequest($input);
+    if (TenantAuth::canSave($auth)) {
+        return $auth;
+    }
+
+    $bots = $input['data']['BOT'] ?? [];
+    if (!is_array($bots)) {
+        return $auth;
+    }
+
+    foreach ($bots as $bot) {
+        if (!is_array($bot) || !isset($bot['AUTH']) || !is_array($bot['AUTH'])) {
+            continue;
+        }
+
+        $botAuth = TenantAuth::fromRequest(['auth' => $bot['AUTH']]);
+        if (TenantAuth::canSave($botAuth)) {
+            return $botAuth;
+        }
+    }
+
+    return $auth;
 }
 
 function resolveMemberId(array $input, array $auth): string
@@ -80,29 +128,47 @@ function resolveMemberId(array $input, array $auth): string
     }
 
     $value = readByPaths($input, [
-        ['member_id'],
         ['auth', 'member_id'],
-        ['data', 'PARAMS', 'FROM_USER_ID'],
-        ['data', 'PARAMS', 'USER_ID'],
+        ['member_id'],
     ]);
 
     return is_scalar($value) ? trim((string)$value) : '';
+}
+
+function resolveBotId(array $input, array $tenant): int
+{
+    $fromEvent = readByPaths($input, [
+        ['data', 'PARAMS', 'BOT_ID'],
+        ['data', 'BOT_ID'],
+    ]);
+
+    if (is_numeric($fromEvent) && (int)$fromEvent > 0) {
+        return (int)$fromEvent;
+    }
+
+    $bots = $input['data']['BOT'] ?? [];
+    if (is_array($bots)) {
+        foreach ($bots as $bot) {
+            if (is_array($bot) && !empty($bot['BOT_ID'])) {
+                return (int)$bot['BOT_ID'];
+            }
+        }
+    }
+
+    return (int)($tenant['BOT_ID'] ?? 0);
 }
 
 function resolveDialogId(array $input): string
 {
     $value = readByPaths($input, [
         ['data', 'PARAMS', 'DIALOG_ID'],
-        ['data', 'PARAMS', 'TO_CHAT_ID'],
+        ['data', 'PARAMS', 'FROM_USER_ID'],
+        ['data', 'PARAMS', 'USER_ID'],
         ['DIALOG_ID'],
     ]);
 
     if ($value === null || $value === '') {
         return '';
-    }
-
-    if (is_numeric($value)) {
-        return (string)$value;
     }
 
     return trim((string)$value);
@@ -112,6 +178,7 @@ function resolveMessageText(array $input): string
 {
     $value = readByPaths($input, [
         ['data', 'PARAMS', 'MESSAGE'],
+        ['data', 'PARAMS', 'MESSAGE_ORIGINAL'],
         ['data', 'PARAMS', 'MESSAGE_TEXT'],
         ['MESSAGE'],
     ]);
@@ -124,7 +191,7 @@ function buildReplyText(string $text, array $tenant, TenantRepository $repositor
     $normalized = trim($text);
     $command = function_exists('mb_strtolower') ? mb_strtolower($normalized) : strtolower($normalized);
 
-    if ($command === '/stats' || $command === 'stats' || $command === 'статистика') {
+    if (in_array($command, ['/stats', '/stat', 'stats', 'статистика'], true)) {
         $count = (new BitrixRest())->getDealCount($tenant, $repository);
         return 'Сделок в CRM: ' . $count;
     }

@@ -60,6 +60,12 @@ try {
             $botStatus = 'Чат-бот зарегистрирован.';
         } else {
             $botStatus = 'Чат-бот уже зарегистрирован.';
+            try {
+                (new BotInstaller())->updateHandler($tenantForRest, $repository);
+                $botStatus .= ' Обработчик сообщений обновлён.';
+            } catch (Throwable $updateError) {
+                $botStatus .= ' Обработчик: ' . $updateError->getMessage();
+            }
         }
 
         if (!empty($_GET['start_chat']) && (int)$botId > 0) {
