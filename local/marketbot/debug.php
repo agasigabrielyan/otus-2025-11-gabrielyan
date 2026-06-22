@@ -21,7 +21,8 @@ try {
         exit;
     }
 
-    echo 'tenant: ' . ($tenant['MEMBER_ID'] ?? '') . ' @ ' . ($tenant['DOMAIN'] ?? '') . ' bot=' . ($tenant['BOT_ID'] ?? '') . "\n\n";
+    echo 'tenant: ' . ($tenant['MEMBER_ID'] ?? '') . ' @ ' . ($tenant['DOMAIN'] ?? '') . ' bot=' . ($tenant['BOT_ID'] ?? '') . "\n";
+    echo 'expected handler: ' . AppConfig::load()['handler_url'] . "\n\n";
 
     $restTenant = [
         'MEMBER_ID' => (string)$tenant['MEMBER_ID'],
@@ -32,17 +33,38 @@ try {
     ];
 
     $binder = new EventBinder();
-  if (!empty($_GET['rebind'])) {
-        (new BotInstaller())->updateHandler($restTenant, $repository);
-        $binder->bindBotEvents($restTenant, $repository);
-        echo "rebind: ok\n\n";
-    }
 
     echo "events:\n";
     $events = $binder->listEvents($restTenant, $repository);
     if ($events === []) {
         echo "(empty)\n";
     } else {
+        foreach ($events as $event) {
+            if (!is_array($event)) {
+                continue;
+            }
+            echo ($event['event'] ?? '?') . ' -> ' . ($event['handler'] ?? '?') . "\n";
+        }
+    }
+
+    if (!empty($_GET['rebind'])) {
+        echo "\nrebind:\n";
+        try {
+            (new BotInstaller())->updateHandler($restTenant, $repository);
+            echo "imbot.update: ok\n";
+        } catch (Throwable $e) {
+            echo 'imbot.update: ' . $e->getMessage() . "\n";
+        }
+
+        try {
+            $binder->bindBotEvents($restTenant, $repository);
+            echo "event.bind: ok\n";
+        } catch (Throwable $e) {
+            echo 'event.bind: ' . $e->getMessage() . "\n";
+        }
+
+        echo "\nevents after rebind:\n";
+        $events = $binder->listEvents($restTenant, $repository);
         foreach ($events as $event) {
             if (!is_array($event)) {
                 continue;
@@ -61,8 +83,7 @@ try {
         echo "(no log yet)\n";
     }
 
-    echo "\nrebind url: " . AppConfig::load()['handler_url'] . "\n";
-    echo "run rebind: debug.php?rebind=1\n";
+    echo "\nmanual test: curl -X POST " . AppConfig::load()['handler_url'] . "\n";
 } catch (Throwable $e) {
     http_response_code(500);
     echo 'error: ' . $e->getMessage();
