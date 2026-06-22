@@ -20,11 +20,16 @@ try {
     $repository = new TenantRepository();
     $repository->ensureTable();
 
-    $input = TenantAuth::getInput();
+    $rawBody = file_get_contents('php://input');
+    $input = TenantAuth::getInput(is_string($rawBody) ? $rawBody : null);
     HandlerLog::write('handler called', [
         'method' => $_SERVER['REQUEST_METHOD'] ?? 'GET',
         'event' => $input['event'] ?? null,
         'keys' => array_keys($input),
+        'has_auth' => isset($input['auth']),
+        'has_data' => isset($input['data']),
+        'content_type' => $_SERVER['CONTENT_TYPE'] ?? '',
+        'raw_len' => is_string($rawBody) ? strlen($rawBody) : 0,
     ]);
 
     $auth = resolveEventAuth($input);
