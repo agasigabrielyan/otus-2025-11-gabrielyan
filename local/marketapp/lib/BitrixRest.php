@@ -25,11 +25,29 @@ final class BitrixRest
         string $handler,
         string $title
     ): void {
-        $this->call($tenant, 'placement.bind', [
+        $response = $this->callRaw($tenant, 'placement.bind', [
             'PLACEMENT' => $placement,
             'HANDLER' => $handler,
             'TITLE' => $title,
+            'LANG_ALL' => json_encode([
+                'ru' => ['TITLE' => $title],
+                'en' => ['TITLE' => $title],
+            ], JSON_UNESCAPED_UNICODE),
         ], $repository);
+
+        if (!empty($response['error'])) {
+            $description = (string)($response['error_description'] ?? $response['error']);
+            throw new RuntimeException($placement . ': ' . $description);
+        }
+    }
+
+    public function callRaw(
+        array $tenant,
+        string $method,
+        array $params,
+        TenantRepository $repository
+    ): array {
+        return $this->call($tenant, $method, $params, $repository, false);
     }
 
     public function getDealCount(array $tenant, TenantRepository $repository): int
@@ -50,13 +68,18 @@ final class BitrixRest
         array $tenant,
         string $method,
         array $params,
-        TenantRepository $repository
+        TenantRepository $repository,
+        bool $throwOnError = true
     ): array {
         $domain = (string)($tenant['DOMAIN'] ?? '');
         $authId = (string)($tenant['AUTH_ID'] ?? '');
 
         if ($domain === '' || $authId === '') {
-            throw new RuntimeException('У портала нет DOMAIN или AUTH_ID.');
+            if ($throwOnError) {
+                throw new RuntimeException('У портала нет DOMAIN или AUTH_ID.');
+            }
+
+            return ['error' => 'NO_AUTH', 'error_description' => 'Нет DOMAIN или AUTH_ID'];
         }
 
         $data = $this->request($domain, $method, $params, $authId);
@@ -67,7 +90,11 @@ final class BitrixRest
             $tenant = $repository->load($memberId);
 
             if ($tenant === null) {
-                throw new RuntimeException('Не удалось обновить токен портала.');
+                if ($throwOnError) {
+                    throw new RuntimeException('Не удалось обновить токен портала.');
+                }
+
+                return ['error' => 'TOKEN_REFRESH_FAILED'];
             }
 
             $data = $this->request(
@@ -78,7 +105,7 @@ final class BitrixRest
             );
         }
 
-        if (!empty($data['error'])) {
+        if ($throwOnError && !empty($data['error'])) {
             $description = (string)($data['error_description'] ?? $data['error']);
             throw new RuntimeException($description);
         }

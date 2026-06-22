@@ -78,7 +78,8 @@ header('Content-Type: text/html; charset=utf-8');
         <p class="value value_big"><?= htmlspecialchars($dealCount, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?></p>
         <?php if ($status === 'Подключено'): ?>
             <p style="margin-top:16px;font-size:13px;">
-                <a href="rebind.php">Зарегистрировать виджет в CRM</a>
+                <a href="rebind.php">Зарегистрировать виджет в CRM</a><br>
+                <a href="debug.php">Диагностика виджета</a>
             </p>
         <?php endif; ?>
     </div>
