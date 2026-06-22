@@ -1,0 +1,28 @@
+<?php
+
+declare(strict_types=1);
+
+header('Content-Type: text/plain; charset=utf-8');
+
+try {
+    require_once __DIR__ . '/lib/bootstrap.php';
+    AppConfig::load();
+
+    $repository = new TenantRepository();
+    $repository->ensureTable();
+
+    echo "config.php: ok\n";
+    echo "table: otus_marketbot_tenant\n";
+    echo "rows: " . $repository->countAll() . "\n";
+
+    $db = Database::connection();
+    $result = $db->query('SELECT MEMBER_ID, DOMAIN, UPDATED_AT FROM otus_marketbot_tenant LIMIT 5');
+    if ($result) {
+        while ($row = $result->fetch_assoc()) {
+            echo 'tenant: ' . ($row['MEMBER_ID'] ?? '') . ' @ ' . ($row['DOMAIN'] ?? '') . ' (' . ($row['UPDATED_AT'] ?? '') . ")\n";
+        }
+    }
+} catch (Throwable $e) {
+    http_response_code(500);
+    echo 'error: ' . $e->getMessage();
+}
