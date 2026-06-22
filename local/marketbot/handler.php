@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+@file_put_contents(__DIR__ . '/data/handler.log', date('Y-m-d H:i:s') . " hit\n", FILE_APPEND);
+
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'HEAD') {
     http_response_code(200);
     exit;

@@ -42,6 +42,8 @@ final class BotInstaller
 
         $repository->saveBotId($memberId, $botId);
 
+        (new EventBinder())->bindBotEvents($tenant, $repository);
+
         return $botId;
     }
 
@@ -73,5 +75,7 @@ final class BotInstaller
             $description = (string)($response['error_description'] ?? $response['error']);
             throw new RuntimeException('imbot.update: ' . $description);
         }
+
+        (new EventBinder())->bindBotEvents($tenant, $repository);
     }
 }

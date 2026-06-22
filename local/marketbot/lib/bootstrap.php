@@ -10,3 +10,4 @@ require_once __DIR__ . '/BitrixRest.php';
 require_once __DIR__ . '/BotInstaller.php';
 require_once __DIR__ . '/BotMessenger.php';
 require_once __DIR__ . '/HandlerLog.php';
+require_once __DIR__ . '/EventBinder.php';
